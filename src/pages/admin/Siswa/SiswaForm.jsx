@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createSiswa, getKelasList } from "../../../_services/admin";
+import AdminLayout from "../../../components/layout/AdminLayout";
 
 export default function SiswaForm() {
   const navigate = useNavigate();
@@ -49,6 +50,7 @@ export default function SiswaForm() {
   };
 
   return (
+    <AdminLayout>
     <div className="p-6 max-w-2xl mx-auto bg-white rounded shadow">
       <h2 className="text-xl font-semibold mb-4">Tambah Siswa Baru</h2>
 
@@ -86,5 +88,6 @@ export default function SiswaForm() {
         </div>
       </form>
     </div>
+    </AdminLayout>
   );
 }

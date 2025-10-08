@@ -14,6 +14,7 @@ import {
   assignMapelsToKelas,
   copyMapelsFromKelas,
 } from "../../../_services/kelasMapel";
+import AdminLayout from "../../../components/layout/AdminLayout";
 
 /**
  * KelasMapelManager
@@ -199,6 +200,7 @@ export default function KelasMapelManager() {
   };
 
   return (
+    <AdminLayout>
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Atur Mapel per Kelas</h1>
@@ -325,5 +327,6 @@ export default function KelasMapelManager() {
         </div>
       </div>
     </div>
+    </AdminLayout>
   );
 }

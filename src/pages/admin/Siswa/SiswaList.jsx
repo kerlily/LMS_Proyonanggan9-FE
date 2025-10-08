@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { listSiswa, deleteSiswa, getKelasList } from "../../../_services/admin";
+import AdminLayout from "../../../components/layout/AdminLayout";
 
 function SmallPagination({ meta, onPage }) {
   if (!meta) return null;
@@ -177,7 +178,8 @@ export default function SiswaList() {
   };
 
   return (
-    <div className="p-6">
+    <AdminLayout>
+    <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold">Daftar Siswa</h2>
         <div className="flex gap-2">
@@ -258,5 +260,6 @@ export default function SiswaList() {
 
       {error && <div className="mt-3 text-red-600">{error}</div>}
     </div>
+    </AdminLayout>
   );
 }

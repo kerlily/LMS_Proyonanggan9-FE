@@ -3,6 +3,8 @@ import React, { useEffect, useState } from "react";
 import { assignWaliKelas, getGuruList, getKelasList } from "../../../_services/admin";
 import { useNavigate } from "react-router-dom";
 
+import AdminLayout from "../../../components/layout/AdminLayout";
+
 export default function AssignWali() {
   const [gurus, setGurus] = useState([]);
   const [kelas, setKelas] = useState([]);
@@ -43,6 +45,7 @@ export default function AssignWali() {
   };
 
   return (
+    <AdminLayout>
     <div className="p-6 max-w-2xl mx-auto bg-white rounded shadow">
       <h2 className="text-xl font-semibold mb-4">Assign Wali Kelas</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -77,9 +80,10 @@ export default function AssignWali() {
           <button type="submit" disabled={loading} className={`px-4 py-2 rounded text-white ${loading ? "bg-gray-400" : "bg-blue-600"}`}>
             {loading ? "Memproses..." : "Assign"}
           </button>
-          <button type="button" onClick={() => navigate("/admin/wali-kelas")} className="px-4 py-2 border rounded">Batal</button>
+          <button type="button" onClick={() => navigate("/admin/guru")} className="px-4 py-2 border rounded">Batal</button>
         </div>
       </form>
     </div>
+    </AdminLayout>
   );
 }

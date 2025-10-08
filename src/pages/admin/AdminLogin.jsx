@@ -32,8 +32,13 @@ export default function AdminLogin() {
         navigate("/");
       }
     } catch (err) {
-      const msg = err?.response?.data?.message || err?.message || "Login gagal";
-      setError(msg);
+      const status = err?.response?.status;
+      const serverMsg = err?.response?.data?.message ?? "";
+      if (status === 401 || /invalid|credential|password|email|salah/i.test(serverMsg)) {
+        setError("email atau password salah");
+      } else {
+        setError(serverMsg || "Login gagal");
+      }
     } finally {
       setLoading(false);
     }

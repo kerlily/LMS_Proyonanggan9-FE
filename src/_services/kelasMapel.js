@@ -35,26 +35,20 @@ export const getAvailableMapelsForKelas = (kelasId) => {
 
 /**
  * Compute assigned mapels = allMapels - availableMapels
- * Karena backend tidak menyediakan GET assigned langsung, kita hitung di client.
- *
- * NOTE: fungsi ini akan me-return axios response-like object dengan .data = array assigned mapels
+ * Because backend does not provide assigned directly, we compute in client.
  */
 export const getKelasMapels = async (kelasId) => {
-  // 1) ambil all mapels (admin)
   const allRes = await safeGet("/admin/mapel");
   if (!allRes) {
     const e = new Error("Tidak dapat mengambil daftar semua mapel (require admin).");
     e.isNotFound = true;
     throw e;
   }
-  // extract array
   const allMapels = Array.isArray(allRes.data)
     ? allRes.data
     : (allRes.data?.data ?? allRes.data?.mapels ?? allRes.data ?? []);
 
-  // 2) ambil available untuk kelas
   const avRes = await safeGet(`/admin/kelas/${kelasId}/mapel/available`);
-  // if avRes is null -> maybe permission denied; we can't compute -> throw to caller
   if (avRes === null) {
     const e = new Error("Tidak dapat mengambil daftar available mapel (permission/404).");
     e.isNotFound = true;
@@ -62,12 +56,19 @@ export const getKelasMapels = async (kelasId) => {
   }
   const avail = avRes.data?.available_mapels ?? avRes.data?.mapels ?? avRes.data?.data ?? avRes.data ?? [];
 
-  // build sets and compute assigned
   const availIds = new Set((avail || []).map((m) => Number(m.id)));
   const assigned = (allMapels || []).filter((m) => !availIds.has(Number(m.id)));
 
-  // return object similar shape to previous aRes usage
   return { data: assigned };
+};
+
+/**
+ * GET statistics for kelas-mapel
+ * Endpoint: GET /admin/kelas-mapel/statistics
+ * Returns backend response or null if 401/403/404 (safeGet behavior).
+ */
+export const getStatistics = (params = {}) => {
+  return safeGet("/admin/kelas-mapel/statistics", params);
 };
 
 /* other actions (attach, detach, assign, copy) unchanged */
@@ -80,6 +81,7 @@ export default {
   getKelasMapels,
   getAvailableMapelsForKelas,
   getAllMapels,
+  getStatistics,
   attachMapelToKelas,
   detachMapelFromKelas,
   assignMapelsToKelas,

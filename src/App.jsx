@@ -1,6 +1,7 @@
 // src/App.jsx
 import React from "react";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import RoleAwareNavbar from "./components/RoleAwareNavbar";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleProtectedRoute from "./components/RoleProtectedRoute";
@@ -23,32 +24,15 @@ import AssignWali from "./pages/admin/WaliKelas/AssignWali";
 import GuruEdit from "./pages/admin/Guru/GuruEdit";
 import MapelList from "./pages/admin/Mapel/MapelList";
 import KelasMapelManager from "./pages/admin/Mapel/KelasMapelManager";
+import MapelDashboard from "./pages/admin/Mapel/MapelDashboard";
 
 export default function App() {
   return (
     <BrowserRouter>
       <div className="min-h-screen bg-gray-50">
-        <header className="bg-white shadow">
-          <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-            <Link to="/" className="text-lg font-semibold text-blue-600">
-              LMS SD
-            </Link>
+       
 
-            <nav className="flex items-center space-x-4">
-              <Link to="/siswa/login" className="text-sm text-gray-700 hover:text-blue-600">
-                Login Siswa
-              </Link>
-              <Link to="/admin/login" className="text-sm text-gray-700 hover:text-blue-600">
-                Login Admin
-              </Link>
-              <Link to="/guru/login" className="text-sm text-gray-700 hover:text-blue-600">
-                Login Guru
-              </Link>
-            </nav>
-          </div>
-        </header>
-
-        <main className="max-w-5xl mx-auto px-4 py-8">
+        <main className="w-full">
           <Routes>
             {/* Home */}
             <Route
@@ -161,12 +145,17 @@ export default function App() {
 
             <Route path="/admin/mapel" element={
   <RoleProtectedRoute allowed={["admin"]}>
-    <MapelList />
+    <MapelDashboard />
   </RoleProtectedRoute>
 } />
 <Route path="/admin/kelas-mapel" element={
   <RoleProtectedRoute allowed={["admin"]}>
     <KelasMapelManager />
+  </RoleProtectedRoute>
+} />
+<Route path="/admin/create-mapel" element={
+  <RoleProtectedRoute allowed={["admin"]}>
+    <MapelList />
   </RoleProtectedRoute>
 } />
 

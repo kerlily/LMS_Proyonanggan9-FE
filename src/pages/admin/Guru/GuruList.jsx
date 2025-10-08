@@ -5,6 +5,7 @@ import { getGuruList, getKelasList, listWaliKelas, deleteGuru } from "../../../_
 import TahunAjaran from "../../../components/TahunAjaran";
 import ConfirmModal from "../../../components/ConfirmModal";
 import api from "../../../_api";
+import AdminLayout from "../../../components/layout/AdminLayout";
 
 /**
  * GuruList (updated)
@@ -181,6 +182,7 @@ export default function GuruList() {
   };
 
   return (
+    <AdminLayout>
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -245,5 +247,6 @@ export default function GuruList() {
         onConfirm={doDelete}
       />
     </div>
+    </AdminLayout>
   );
 }

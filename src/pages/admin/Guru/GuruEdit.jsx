@@ -5,6 +5,7 @@ import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 
 import { showGuru, updateGuru, resetGuruPassword, deleteGuru } from "../../../_services/admin";
+import AdminLayout from "../../../components/layout/AdminLayout";
 
 export default function GuruEdit() {
   const { id } = useParams();
@@ -163,6 +164,7 @@ export default function GuruEdit() {
   if (loading) return <div className="p-6">Memuat...</div>;
 
   return (
+    <AdminLayout>
     <div className="p-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-4 mb-4">
         {photoPreview ? (
@@ -225,5 +227,6 @@ export default function GuruEdit() {
         </div>
       </div>
     </div>
+    </AdminLayout>
   );
 }

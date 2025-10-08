@@ -5,10 +5,10 @@ import {
   createMapel,
   updateMapel,
   deleteMapel,
-  getMapelAll,
 } from "../../../_services/mapel";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
+import AdminLayout from "../../../components/layout/AdminLayout";
 
 /**
  * Admin Mapel management page
@@ -165,6 +165,7 @@ setMeta({
   );
 
   return (
+    <AdminLayout>
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Manajemen Mata Pelajaran</h1>
@@ -310,6 +311,7 @@ setMeta({
         </div>
       )}
     </div>
+    </AdminLayout>
   );
 }
 

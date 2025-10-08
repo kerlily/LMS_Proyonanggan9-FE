@@ -28,7 +28,13 @@ export default function GuruLogin() {
         navigate("/");
       }
     } catch (err) {
-      setError(err?.response?.data?.message || "Login gagal");
+      const status = err?.response?.status;
+      const serverMsg = err?.response?.data?.message ?? "";
+      if (status === 401 || /invalid|credential|password|email|salah/i.test(serverMsg)) {
+        setError("email atau password salah");
+      } else {
+        setError(serverMsg || "Login gagal");
+      }
     } finally {
       setLoading(false);
     }
@@ -49,8 +55,8 @@ export default function GuruLogin() {
             <input name="password" type="password" value={form.password} onChange={handleChange} required className="w-full px-3 py-2 border rounded" />
           </div>
 
-          {error && <div className="text-red-600 text-sm">{error}</div>}
-
+          {error   && <div className="text-red-600 text-sm"> {error} </div>}
+ 
           <div className="flex gap-2">
             <button type="submit" disabled={loading} className={`flex-1 py-2 rounded text-white ${loading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"}`}>
               {loading ? "Memproses..." : "Masuk"}

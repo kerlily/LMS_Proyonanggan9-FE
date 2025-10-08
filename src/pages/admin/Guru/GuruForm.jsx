@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createGuru } from "../../../_services/admin";
+import AdminLayout from "../../../components/layout/AdminLayout";
 
 export default function GuruForm() {
   const navigate = useNavigate();
@@ -49,6 +50,7 @@ export default function GuruForm() {
   };
 
   return (
+    <AdminLayout>
     <div className="p-6 max-w-2xl mx-auto bg-white rounded shadow">
       <h2 className="text-xl font-semibold mb-4">Tambah Guru</h2>
 
@@ -96,5 +98,6 @@ export default function GuruForm() {
         </div>
       </form>
     </div>
+    </AdminLayout>
   );
 }
