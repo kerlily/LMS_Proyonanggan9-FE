@@ -152,16 +152,6 @@ export default function StudentLogin() {
               </select>
             </div>
 
-            <div>
-              <label className="block mb-1">Nama (otomatis)</label>
-              <input
-                type="text"
-                value={namaValue}
-                readOnly
-                className="w-full px-4 py-2 border rounded bg-gray-50"
-                placeholder="Nama akan terisi setelah pilih siswa"
-              />
-            </div>
 
             <div>
               <label className="block mb-1">Password</label>
