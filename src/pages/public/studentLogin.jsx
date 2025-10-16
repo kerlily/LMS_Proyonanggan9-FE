@@ -1,8 +1,9 @@
 // src/pages/public/studentLogin.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react"; // jika tidak pakai lucide, hapus ikon / button
+import { Eye, EyeOff } from "lucide-react";
 import { loginSiswa, getKelas, getSiswaByKelas } from "../../_services/siswa";
+import { Link } from "react-router-dom";
 
 /**
  * StudentLogin
@@ -104,104 +105,105 @@ export default function StudentLogin() {
   };
 
   return (
-    <div className="min-h-screen flex">
-      <div className="hidden md:flex flex-1 items-center justify-center bg-[#1cc5ae] text-white">
-        <div className="max-w-md text-center p-8">
-          <h2 className="text-3xl font-bold">LMS Sekolah</h2>
-          <p className="mt-2">Masuk sebagai siswa untuk melihat nilai</p>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gradient-to-b from-blue-100 to-white flex flex-col items-center justify-center">
+      {/* Header Image for Mobile */}
+      {/* Form Card */}
+      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md relative overflow-hidden">
+        <h1 className="text-2xl sm:text-3xl font-bold text-blue-600 mb-4 text-center">
+          Login Murid
+        </h1>
+        <p className="text-gray-600 mb-6 text-center text-sm sm:text-base">
+          Masuk untuk melihat nilai dan pelajaran
+        </p>
 
-      <div className="flex-1 flex items-center justify-center bg-white p-6">
-        <div className="w-full max-w-md">
-          <h1 className="text-2xl font-bold mb-4">Login Siswa</h1>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
+              Pilih Kelas
+            </label>
+            <select
+              value={kelasId}
+              onChange={(e) => setKelasId(e.target.value)}
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-sm sm:text-base"
+              required
+            >
+              <option value="">{loadingKelas ? "Memuat..." : "-- Pilih Kelas --"}</option>
+              {kelasList.map((k) => (
+                <option key={k.id} value={k.id}>
+                  {k.nama || k.name || (k.tingkat ? `${k.tingkat} ${k.nama || k.name}` : `${k.kelas || k.name}`)}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block mb-1">Pilih Kelas</label>
-              <select
-                value={kelasId}
-                onChange={(e) => setKelasId(e.target.value)}
-                className="w-full px-4 py-2 border rounded"
+          <div>
+            <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
+              Pilih Nama
+            </label>
+            <select
+              value={selectedSiswaId}
+              onChange={onSelectSiswa}
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-sm sm:text-base"
+              disabled={!kelasId || loadingSiswa}
+              required
+            >
+              <option value="">{loadingSiswa ? "Memuat nama..." : "-- Pilih Nama --"}</option>
+              {siswaList.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {getSiswaName(s)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
+              Kata Sandi
+            </label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-sm sm:text-base"
+                placeholder="Masukkan kata sandi"
                 required
-              >
-                <option value="">{loadingKelas ? "Memuat..." : "-- Pilih Kelas --"}</option>
-                {kelasList.map((k) => (
-                  <option key={k.id} value={k.id}>
-                    {k.nama || k.name || (k.tingkat ? `${k.tingkat} ${k.nama || k.name}` : `${k.kelas || k.name}`)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block mb-1">Pilih Nama</label>
-              <select
-                value={selectedSiswaId}
-                onChange={onSelectSiswa}
-                className="w-full px-4 py-2 border rounded"
-                disabled={!kelasId || loadingSiswa}
-                required
-              >
-                <option value="">{loadingSiswa ? "Memuat siswa..." : "-- Pilih Nama --"}</option>
-                {siswaList.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {getSiswaName(s)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-
-            <div>
-              <label className="block mb-1">Password</label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-2 border rounded"
-                  placeholder="Password"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2 text-gray-500"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </div>
-
-            {error && <div className="text-red-600 text-sm">{error}</div>}
-
-            <div className="flex gap-3">
+              />
               <button
                 type="button"
-                onClick={() => {
-                  setKelasId("");
-                  setSiswaList([]);
-                  setSelectedSiswaId("");
-                  setNamaValue("");
-                  setPassword("");
-                  setError(null);
-                }}
-                className="flex-1 py-2 border rounded"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
               >
-                Reset
-              </button>
-
-              <button
-                type="submit"
-                disabled={loadingLogin}
-                className={`flex-1 py-2 rounded text-white ${loadingLogin ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"}`}
-              >
-                {loadingLogin ? "Memproses..." : "Masuk"}
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
-          </form>
-        </div>
+          </div>
+
+          {error && (
+            <div className="text-red-500 text-sm bg-red-50 p-2 rounded-lg">
+              {error}
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Link
+              to="/"
+              role="button"
+              className="flex-1 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition duration-300 text-sm sm:text-base inline-flex items-center justify-center text-center"
+            >
+              kembali
+            </Link>
+            <button
+              type="submit"
+              disabled={loadingLogin}
+              className={`flex-1 py-3 rounded-lg text-white font-semibold text-sm sm:text-base ${
+                loadingLogin ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"
+              } transition duration-300`}
+            >
+              {loadingLogin ? "Memproses..." : "Masuk"}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

@@ -1,9 +1,8 @@
 // src/pages/admin/Guru/GuruList.jsx
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { getGuruList, getKelasList, listWaliKelas, deleteGuru } from "../../../_services/admin";
+import { Link } from "react-router-dom";
+import { getGuruList, getKelasList, listWaliKelas } from "../../../_services/admin";
 import TahunAjaran from "../../../components/TahunAjaran";
-import ConfirmModal from "../../../components/ConfirmModal";
 import api from "../../../_api";
 import AdminLayout from "../../../components/layout/AdminLayout";
 
@@ -85,9 +84,6 @@ export default function GuruList() {
   const [waliMap, setWaliMap] = useState({}); // guruId => [kelas objects]
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [toDelete, setToDelete] = useState(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     let mounted = true;
@@ -149,37 +145,7 @@ export default function GuruList() {
     return () => { mounted = false; };
   }, []);
 
-  const handleDeleteConfirm = (guru) => {
-    setToDelete(guru);
-    setConfirmOpen(true);
-  };
 
-  const doDelete = async () => {
-    if (!toDelete) return;
-    try {
-      // try delete endpoint if available (implement deleteGuru in services). If not available: show error
-      if (typeof deleteGuru === "function") {
-        await deleteGuru(toDelete.id);
-      } else {
-        // fallback: attempt DELETE /admin/guru/{id}
-        await api.delete(`/admin/guru/${toDelete.id}`);
-      }
-      // remove from state
-      setGurus(prev => prev.filter(g => String(g.id) !== String(toDelete.id)));
-      setWaliMap(prev => {
-        const copy = {...prev};
-        delete copy[toDelete.id];
-        return copy;
-      });
-      setErr(null);
-    } catch (e) {
-      console.error(e);
-      setErr(e?.response?.data?.message || "Gagal menghapus guru.");
-    } finally {
-      setConfirmOpen(false);
-      setToDelete(null);
-    }
-  };
 
   return (
     <AdminLayout>
@@ -230,22 +196,14 @@ export default function GuruList() {
               </div>
 
               <div className="flex items-center gap-2">
-                <Link to={`/admin/guru/edit/${g.id}`} className="px-3 py-2 border rounded text-sm">Edit</Link>
-                <Link to={`/admin/guru/edit/${g.id}?reset=true`} className="px-3 py-2 border rounded text-sm">Reset Password</Link>
-                <button onClick={() => handleDeleteConfirm(g)} className="px-3 py-2 bg-red-600 text-white rounded text-sm">Delete</button>
+                <Link to={`/admin/guru/edit/${g.id}`} className="px-3 py-2 rounded text-sm bg-blue-600 text-yellow-50">Edit</Link>  
               </div>
             </div>
           ))
         )}
       </div>
 
-      <ConfirmModal
-        isOpen={confirmOpen}
-        title="Hapus Guru"
-        message={`Apakah Anda yakin ingin menghapus guru "${toDelete?.nama ?? toDelete?.name ?? ""}"? Tindakan ini tidak bisa dibatalkan.`}
-        onCancel={() => { setConfirmOpen(false); setToDelete(null); }}
-        onConfirm={doDelete}
-      />
+      
     </div>
     </AdminLayout>
   );

@@ -16,6 +16,7 @@ export default function Navbar({ compact = false }) {
     { label: "Siswa", to: "/admin/siswa" },
     { label: "Guru", to: "/admin/guru" },
     { label: "Mapel", to: "/admin/mapel" },
+    { label: "Tahun Ajaran", to: "/admin/tahun-ajaran" },
   ];
   const guruLinks = [
     { label: "Dashboard Guru", to: "/guru" },

@@ -25,7 +25,7 @@ function StatCard({ label, value, icon: Icon, color = "indigo", trend }) {
             {trend && <p className="text-sm text-green-600 mt-2 font-medium">↑ {trend}% dari bulan lalu</p>}
           </div>
           <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${colorClasses[color]} flex items-center justify-center shadow-lg`}>
-            <Icon className="w-7 h-7 text-white" />
+            <Icon className="w-7 h-7 text-white"  />
           </div>
         </div>
       </div>

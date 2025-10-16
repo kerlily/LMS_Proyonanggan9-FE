@@ -65,8 +65,13 @@ export const getGuruList = (params = {}) => {
 
 ///// KELAS /////
 export const getKelasList = (params = {}) => {
-  // expects endpoint /kelas that returns array or { data: [...] }
-  return api.get("/kelas/", { params });
+  return api.get("/admin/kelas-mapel/statistics", { params })
+    .then(res => {
+      // normalisasi: komponen biasanya membaca res.data atau res.data.data
+      // kita kembalikan object shape supaya komponen yang sudah expecting res.data tetap work:
+      // res.data -> array
+      return { data: res?.data?.statistics ?? res?.data?.data ?? res?.data ?? [] };
+    });
 };
 
 ///// WALI KELAS /////
