@@ -1,5 +1,5 @@
 // src/components/layout/AdminLayout.jsx
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
@@ -25,11 +25,32 @@ export default function AdminLayout({ children }) {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
 
+  // user state - will update when localStorage changes
+  const [user, setUser] = useState(() => {
+    const raw = localStorage.getItem("userInfo") || localStorage.getItem("user");
+    return raw ? JSON.parse(raw) : null;
+  });
+
   const location = useLocation();
   const navigate = useNavigate();
 
-  const raw = localStorage.getItem("userInfo") || localStorage.getItem("user");
-  const user = raw ? JSON.parse(raw) : null;
+  // Listen to localStorage changes to update user state
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const raw = localStorage.getItem("userInfo") || localStorage.getItem("user");
+      setUser(raw ? JSON.parse(raw) : null);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also listen to custom event for same-tab updates
+    window.addEventListener('userInfoUpdated', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('userInfoUpdated', handleStorageChange);
+    };
+  }, []);
 
   const menu = [
     { icon: Home, label: "Overview", to: "/admin" },
@@ -47,6 +68,8 @@ export default function AdminLayout({ children }) {
     }
     localStorage.removeItem("token");
     localStorage.removeItem("userInfo");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("user");
     navigate("/admin/login");
   }, [navigate]);
 
@@ -66,6 +89,19 @@ export default function AdminLayout({ children }) {
     setProfileDropdownOpen(false);
     setMobileMenuOpen(false);
   };
+
+  const handleProfileSaved = () => {
+    // Reload user data from localStorage
+    const raw = localStorage.getItem("userInfo") || localStorage.getItem("user");
+    setUser(raw ? JSON.parse(raw) : null);
+    
+    // Dispatch custom event for other components
+    window.dispatchEvent(new Event('userInfoUpdated'));
+  };
+
+  // Get display name and initial
+  const displayName = user?.nama ?? user?.name ?? "Admin";
+  const userInitial = displayName.charAt(0).toUpperCase();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
@@ -115,10 +151,10 @@ export default function AdminLayout({ children }) {
                 aria-expanded={profileDropdownOpen}
               >
                 <div className="w-9 h-9 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                  {user?.nama ? user.nama.charAt(0).toUpperCase() : user?.name ? user.name.charAt(0).toUpperCase() : "A"}
+                  {userInitial}
                 </div>
                 <div className="text-left">
-                  <div className="text-sm font-medium text-gray-900">{user?.nama ?? user?.name ?? "Admin"}</div>
+                  <div className="text-sm font-medium text-gray-900">{displayName}</div>
                   <div className="text-xs text-gray-500">Administrator</div>
                 </div>
               </button>
@@ -227,15 +263,13 @@ export default function AdminLayout({ children }) {
         isOpen={profileModalOpen}
         onRequestClose={() => setProfileModalOpen(false)}
         initialUser={user}
-        onSaved={() => {
-          // optional: update navbar user display after save
-          // reload user from localStorage if your profile endpoint updates it
-          const raw2 = localStorage.getItem("userInfo") || localStorage.getItem("user");
-          // no setState here since this component reads from localStorage each render
-        }}
+        onSaved={handleProfileSaved}
       />
 
-      <ChangePasswordModal isOpen={passwordModalOpen} onRequestClose={() => setPasswordModalOpen(false)} />
+      <ChangePasswordModal 
+        isOpen={passwordModalOpen} 
+        onRequestClose={() => setPasswordModalOpen(false)} 
+      />
     </div>
   );
 }

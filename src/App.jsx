@@ -34,7 +34,7 @@ import MapelDashboard from "./pages/admin/Mapel/MapelDashboard";
 export default function App() {
   const location = useLocation();
   // routes or prefixes that should render without the centered max width wrapper
-  const fullWidthPrefixes = ["/siswa/login", "/admin", "/guru/login"];
+  const fullWidthPrefixes = ["/siswa/login", "/admin", "/guru"];
   // use prefix matching so all /admin routes (like /admin/siswa) become full-width
   const isFull = fullWidthPrefixes.some((p) => location.pathname.startsWith(p));
 
