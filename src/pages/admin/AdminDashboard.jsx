@@ -1,10 +1,11 @@
 // src/pages/admin/AdminDashboard.jsx
 import React, { useEffect, useState } from "react";
-import { Users, GraduationCap, BookOpen } from "lucide-react";
+import { Users, GraduationCap, BookOpen, User } from "lucide-react";
 import AdminLayout from "../../components/layout/AdminLayout";
 import api from "../../_api";
 import { listSiswa, listGuru } from "../../_services/admin";
 import { listMapel } from "../../_services/mapel";
+import { listAdmin } from "../../_services/adminUser";
 
 // StatCard, ActionCard and fmt helpers (sama seperti sebelumnya)
 function StatCard({ label, value, icon: Icon, color = "indigo", trend }) {
@@ -39,6 +40,7 @@ function ActionCard({ title, description, buttonText, onClick, icon: Icon, color
     indigo: "from-indigo-50 to-indigo-100 border-indigo-200 hover:border-indigo-300",
     purple: "from-purple-50 to-purple-100 border-purple-200 hover:border-purple-300",
     blue: "from-blue-50 to-blue-100 border-blue-200 hover:border-blue-300",
+    green: "from-green-50 to-green-100 border-green-200 hover:border-green-300",
   };
 
   const buttonColors = {
@@ -89,18 +91,20 @@ export default function AdminDashboard() {
   const pSiswa = listSiswa({ per_page: 1 });
   const pGuru = listGuru({ per_page: 1 });
   const pMapel = listMapel({ per_page: 1 });
+  const pAdmin = listAdmin({ per_page: 1 });
   const pYear = api.get("/tahun-ajaran/active");
 
-        const [resSiswa, resGuru, resMapel, resYear] = await Promise.all([pSiswa, pGuru, pMapel, pYear]);
+        const [resSiswa, resGuru, resMapel, resYear, resAdmin] = await Promise.all([pSiswa, pGuru, pMapel, pYear, pAdmin]);
 
         if (!mounted) return;
 
         const totalSiswa = resSiswa?.data?.total ?? (Array.isArray(resSiswa?.data) ? resSiswa.data.length : null);
         const totalGuru = resGuru?.data?.total ?? (Array.isArray(resGuru?.data) ? resGuru.data.length : null);
         const totalMapel = resMapel?.data?.total ?? (Array.isArray(resMapel?.data) ? resMapel.data.length : null);
+        const totalAdmin = resAdmin?.data?.total ?? (Array.isArray(resAdmin?.data) ? resAdmin.data.length : null);
         const year = resYear?.data?.data ?? resYear?.data ?? null;
 
-        setStats({ totalSiswa, totalGuru, totalMapel });
+        setStats({ totalSiswa, totalGuru, totalMapel, totalAdmin });
         setYearInfo(year);
       } catch (err) {
         console.error("Error fetching admin dashboard data", err);
@@ -126,6 +130,7 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
             <StatCard label="Total Siswa" value={fmt(stats.totalSiswa)} icon={Users} color="indigo" />
             <StatCard label="Total Guru" value={fmt(stats.totalGuru)} icon={GraduationCap} color="purple" />
+            <StatCard label="Total Admin" value={fmt(stats.totalAdmin)} icon={User} color="green" />
             <StatCard label="Mata Pelajaran" value={fmt(stats.totalMapel)} icon={BookOpen} color="blue" />
           </div>
 

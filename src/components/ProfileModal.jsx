@@ -1,4 +1,4 @@
-// src/components/ProfileModal.jsx - COMPLETE FIX
+// src/components/ProfileModal.jsx - FIXED VERSION
 import React, { useEffect, useState } from "react";
 import Modal from "react-modal";
 import { X, Camera, Loader } from "lucide-react";
@@ -16,30 +16,36 @@ function buildPhotoUrl(data) {
     return null;
   }
 
-  console.log("🔍 buildPhotoUrl input:", data);
+  console.log("🔍 buildPhotoUrl input:", JSON.stringify(data, null, 2));
 
-  // Priority 1: photo_url
-  if (data.photo_url) {
+  // Priority 1: photo_url exists dan valid
+  if (data.photo_url && typeof data.photo_url === 'string' && data.photo_url.length > 0) {
     console.log("✅ Found photo_url:", data.photo_url);
     return data.photo_url;
   }
 
-  // Priority 2: photo path
-  if (data.photo) {
-    const url = data.photo.startsWith('http') 
-      ? data.photo 
-      : `${window.location.origin}/storage/${data.photo}`;
+  // Priority 2: photo path exists
+  if (data.photo && typeof data.photo === 'string' && data.photo.length > 0) {
+    if (data.photo.startsWith('http')) {
+      console.log("✅ Photo is already full URL:", data.photo);
+      return data.photo;
+    }
+    
+    // FIXED: Gunakan API base URL bukan window.location.origin
+    // window.location.origin hilang port number di dev environment
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    const url = `${baseUrl}/storage/${data.photo}`;
     console.log("✅ Built photo URL from path:", url);
     return url;
   }
 
   // Priority 3: nested guru object
-  if (data.guru) {
+  if (data.guru && typeof data.guru === 'object') {
     console.log("🔍 Checking nested guru object");
     return buildPhotoUrl(data.guru);
   }
 
-  console.log("❌ No photo found");
+  console.log("❌ No photo found in data");
   return null;
 }
 
@@ -53,9 +59,10 @@ export default function ProfileModal({ isOpen, onRequestClose, initialUser }) {
   const [photoFile, setPhotoFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && initialUser) {
       console.log("🔍 ProfileModal opened with user:", initialUser);
       
       setForm({
@@ -70,6 +77,7 @@ export default function ProfileModal({ isOpen, onRequestClose, initialUser }) {
       console.log("🖼️ Setting preview URL:", photoUrl);
       setPreviewUrl(photoUrl);
       setPhotoFile(null);
+      setImageError(false);
     }
   }, [initialUser, isOpen]);
 
@@ -81,6 +89,8 @@ export default function ProfileModal({ isOpen, onRequestClose, initialUser }) {
   const handleFile = (e) => {
     const f = e.target.files?.[0] ?? null;
     setPhotoFile(f);
+    setImageError(false);
+    
     if (f) {
       // Revoke previous blob URL to prevent memory leak
       if (previewUrl && previewUrl.startsWith('blob:')) {
@@ -146,7 +156,9 @@ export default function ProfileModal({ isOpen, onRequestClose, initialUser }) {
           
           // Build photo URL from response
           let photoUrl = res?.data?.photo_url;
-          if (!photoUrl && newGuru?.photo) {
+          if (!photoUrl && newGuru?.photo_url) {
+            photoUrl = newGuru.photo_url;
+          } else if (!photoUrl && newGuru?.photo) {
             photoUrl = newGuru.photo.startsWith("http") 
               ? newGuru.photo 
               : `${window.location.origin}/storage/${newGuru.photo}`;
@@ -158,7 +170,7 @@ export default function ProfileModal({ isOpen, onRequestClose, initialUser }) {
           
           console.log("🖼️ New photo URL:", photoUrl);
           
-          // Merge data
+          // Merge data - PENTING: preserve photo_url
           const merged = { 
             ...prev, 
             ...newUser,
@@ -171,19 +183,20 @@ export default function ProfileModal({ isOpen, onRequestClose, initialUser }) {
             photo_url: photoUrl || prev.photo_url
           };
 
-          // If guru data exists, merge it
+          // If guru data exists, merge it - PENTING: include photo_url
           if (newGuru) {
             merged.guru = {
               ...prev.guru,
               ...newGuru,
-              photo_url: photoUrl
+              photo_url: newGuru.photo_url || photoUrl
             };
           }
 
           localStorage.setItem("userInfo", JSON.stringify(merged));
+          localStorage.setItem("user", JSON.stringify(merged));
           console.log("💾 Updated localStorage:", merged);
           
-          // Dispatch event
+          // Dispatch events untuk update layout
           window.dispatchEvent(new Event('storage'));
           window.dispatchEvent(new Event('userInfoUpdated'));
         } catch (e) {
@@ -227,6 +240,11 @@ export default function ProfileModal({ isOpen, onRequestClose, initialUser }) {
     };
   }, [previewUrl]);
 
+  const handleImageError = () => {
+    console.error("❌ Failed to load image:", previewUrl);
+    setImageError(true);
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -248,24 +266,18 @@ export default function ProfileModal({ isOpen, onRequestClose, initialUser }) {
       <form onSubmit={handleSubmit} className="p-6 space-y-4">
         <div className="flex items-center gap-4">
           <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border-2 border-gray-200">
-            {previewUrl ? (
+            {previewUrl && !imageError ? (
               <img 
                 src={previewUrl} 
                 alt="avatar" 
                 className="w-full h-full object-cover"
-                onError={(e) => {
-                  console.error("❌ Failed to load image:", previewUrl);
-                  e.target.style.display = 'none';
-                  e.target.nextSibling.style.display = 'flex';
-                }}
+                onError={handleImageError}
               />
-            ) : null}
-            <div 
-              className={`w-full h-full flex items-center justify-center text-gray-400 text-xs text-center p-2 ${previewUrl ? 'hidden' : ''}`}
-              style={previewUrl ? { display: 'none' } : {}}
-            >
-              No Photo
-            </div>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs text-center p-2">
+                No Photo
+              </div>
+            )}
           </div>
 
           <div>

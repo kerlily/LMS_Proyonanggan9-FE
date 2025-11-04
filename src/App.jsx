@@ -31,6 +31,10 @@ import MapelList from "./pages/admin/Mapel/MapelList";
 import KelasMapelManager from "./pages/admin/Mapel/KelasMapelManager";
 import MapelDashboard from "./pages/admin/Mapel/MapelDashboard";
 
+import AdminForm from "./pages/admin/Admin/AdminForm";
+import AdminList from "./pages/admin/Admin/AdminList";
+import AdminResetPassword from "./pages/admin/Admin/AdminResetPassword";
+
 export default function App() {
   const location = useLocation();
   // routes or prefixes that should render without the centered max width wrapper
@@ -213,6 +217,36 @@ export default function App() {
               element={
                 <RoleProtectedRoute allowed={["admin"]}>
                   <GuruEdit />
+                </RoleProtectedRoute>
+              }
+            />
+
+            {/* Admin: list admin */}
+            <Route
+              path="/admin/admins"
+              element={
+                <RoleProtectedRoute allowed={["admin"]}>
+                  <AdminList />
+                </RoleProtectedRoute>
+              }
+            />
+
+            {/* Admin: create admin */}
+            <Route
+              path="/admin/admins/create"
+              element={
+                <RoleProtectedRoute allowed={["admin"]}>
+                  <AdminForm />
+                </RoleProtectedRoute>
+              }
+            />
+
+            {/* Admin: reset password */}
+            <Route
+              path="/admin/admins/reset-password/:id"
+              element={
+                <RoleProtectedRoute allowed={["admin"]}>
+                  <AdminResetPassword />
                 </RoleProtectedRoute>
               }
             />

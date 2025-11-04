@@ -56,6 +56,7 @@ export default function AdminLayout({ children }) {
     { icon: Home, label: "Overview", to: "/admin" },
     { icon: Users, label: "Siswa", to: "/admin/siswa" },
     { icon: GraduationCap, label: "Guru", to: "/admin/guru" },
+    { icon: User, label: "Admin", to: "/admin/admins" },
     { icon: BookOpen, label: "Mapel", to: "/admin/mapel" },
     { icon: Calendar, label: "Tahun Ajaran", to: "/admin/tahun-ajaran" },
   ];

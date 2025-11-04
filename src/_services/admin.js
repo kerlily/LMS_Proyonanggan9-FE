@@ -1,15 +1,6 @@
 // src/_services/admin.js
 import api from "../_api";
 
-/**
- * Service wrapper untuk endpoint-admin
- * Base URL di _api harus mengarah ke http://127.0.0.1:8000/api
- *
- * Catatan:
- * - createGuru menerima FormData (multipart/form-data). Key file: "photo".
- *   Jika backend mengharapkan key lain (contoh "foto"), ganti di frontend sebelum append.
- */
-
 ///// SISWA /////
 export const createSiswa = (payload) => {
   // payload: { nama, tahun_lahir, kelas_id, ... }

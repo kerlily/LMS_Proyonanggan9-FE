@@ -161,7 +161,12 @@ export default function GuruEdit() {
     }
   };
 
-  if (loading) return <div className="p-6">Memuat...</div>;
+
+  if (loading) return (
+    <AdminLayout>
+      <div className="p-6">Memuat...</div>
+    </AdminLayout>
+  ) 
 
   return (
     <AdminLayout>

@@ -15,6 +15,7 @@ export default function Navbar({ compact = false }) {
     { label: "Dashboard Admin", to: "/admin" },
     { label: "Siswa", to: "/admin/siswa" },
     { label: "Guru", to: "/admin/guru" },
+    { label: "Admin", to: "/admin/admins" },
     { label: "Mapel", to: "/admin/mapel" },
     { label: "Tahun Ajaran", to: "/admin/tahun-ajaran" },
   ];

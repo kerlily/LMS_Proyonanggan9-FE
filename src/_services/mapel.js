@@ -1,16 +1,6 @@
 // src/_services/mapel.js
 import api from "../_api";
 
-/**
- * Services for mapel endpoints
- * - listMapel(params) => GET /api/admin/mapel
- * - createMapel(payload) => POST /api/admin/mapel
- * - updateMapel(id, payload) => PUT /api/admin/mapel/{id}
- * - deleteMapel(id) => DELETE /api/admin/mapel/{id}
- * - getMapelAll() => GET /api/mapel/all (public)
- * - getMapel(id) => GET /api/admin/mapel/{id}
- */
-
 export const listMapel = (params = {}) => {
   // params: { page, per_page, search }
   return api.get("/admin/mapel", { params });

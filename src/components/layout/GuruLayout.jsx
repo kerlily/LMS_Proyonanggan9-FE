@@ -54,7 +54,7 @@ export default function GuruLayout({ children }) {
     localStorage.removeItem("userInfo");
     localStorage.removeItem("access_token");
     localStorage.removeItem("user");
-    navigate("/guru/login");
+    navigate("/admin/login");
   };
 
   const isActive = (path) => {
@@ -87,21 +87,19 @@ export default function GuruLayout({ children }) {
   const displayName = user?.nama ?? user?.name ?? "Guru";
   const userInitial = displayName.charAt(0).toUpperCase();
   
-  // Build photo URL dengan pattern yang work
-  const avatarPhotoUrl = user?.photo_url ?? 
-    user?.guru?.photo_url ?? 
-    (user?.guru?.photo ? 
-      (user.guru.photo.startsWith("http") ? 
-        user.guru.photo : 
-        `${window.location.origin}/storage/${user.guru.photo}`
-      ) : 
-      (user?.photo ? 
-        (user.photo.startsWith("http") ? 
-          user.photo : 
-          `${window.location.origin}/storage/${user.photo}`
-        ) : null
-      )
-    );
+const buildPhotoUrl = (photoPath) => {
+  if (!photoPath) return null;
+  if (photoPath.startsWith('http')) return photoPath;
+  
+  const baseUrl = import.meta.env.VITE_API_URL;
+  return `${baseUrl}/storage/${photoPath}`;
+};
+
+const avatarPhotoUrl = user?.photo_url ?? 
+  user?.guru?.photo_url ?? 
+  buildPhotoUrl(user?.guru?.photo) ?? 
+  buildPhotoUrl(user?.photo) ?? 
+  null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
