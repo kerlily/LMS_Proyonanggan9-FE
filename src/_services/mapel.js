@@ -7,7 +7,7 @@ export const listMapel = (params = {}) => {
 };
 
 export const createMapel = (payload) => {
-  // payload: { nama, kode }
+  // payload: { nama, kode }  
   return api.post("/admin/mapel", payload);
 };
 

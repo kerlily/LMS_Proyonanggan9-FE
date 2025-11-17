@@ -11,6 +11,7 @@ import {
   Menu,
   X,
   Key,
+  Logs,
   Calendar,
 } from "lucide-react";
 import { logout as serviceLogout } from "../../_services/auth";
@@ -59,6 +60,7 @@ export default function AdminLayout({ children }) {
     { icon: User, label: "Admin", to: "/admin/admins" },
     { icon: BookOpen, label: "Mapel", to: "/admin/mapel" },
     { icon: Calendar, label: "Tahun Ajaran", to: "/admin/tahun-ajaran" },
+    { icon: Logs, label: "Logs", to: "/admin/logs" },
   ];
 
   const handleLogout = useCallback(async () => {

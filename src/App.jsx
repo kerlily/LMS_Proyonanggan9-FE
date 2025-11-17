@@ -35,6 +35,12 @@ import AdminForm from "./pages/admin/Admin/AdminForm";
 import AdminList from "./pages/admin/Admin/AdminList";
 import AdminResetPassword from "./pages/admin/Admin/AdminResetPassword";
 
+import NilaiAkhir from "./pages/guru/nilai/NilaiAkhir";
+import RawNilaiDashboard from "./pages/guru/hitung_nilai/RawNilaiDashboard";
+import RawNilaiForm from "./pages/guru/hitung_nilai/RawNilaiForm";
+
+import DashboardLog from "./pages/admin/log/DashboardLog";
+
 export default function App() {
   const location = useLocation();
   // routes or prefixes that should render without the centered max width wrapper
@@ -283,6 +289,14 @@ export default function App() {
                 </RoleProtectedRoute>
               }
             />
+             <Route
+              path="/admin/logs"
+              element={
+                <RoleProtectedRoute allowed={["admin"]}>
+                  <DashboardLog />
+                </RoleProtectedRoute>
+              }
+            />
 
             {/* Guru protected */}
             <Route
@@ -290,6 +304,31 @@ export default function App() {
               element={
                 <RoleProtectedRoute allowed={["guru"]}>
                   <GuruDashboard />
+                </RoleProtectedRoute>
+              }
+            />
+            {/* Guru protected */}
+            <Route
+              path="/guru/nilai"
+              element={
+                <RoleProtectedRoute allowed={["guru"]}>
+                  <NilaiAkhir />
+                </RoleProtectedRoute>
+              }
+            />
+             <Route
+              path="/guru/nilai-detail"
+              element={
+                <RoleProtectedRoute allowed={["guru"]}>
+                  <RawNilaiDashboard />
+                </RoleProtectedRoute>
+              }
+            />
+             <Route
+              path="/guru/nilai-details"
+              element={
+                <RoleProtectedRoute allowed={["guru"]}>
+                  <RawNilaiForm />
                 </RoleProtectedRoute>
               }
             />
