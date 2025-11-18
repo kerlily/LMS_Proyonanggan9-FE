@@ -24,6 +24,7 @@ export default function Navbar({ compact = false }) {
     { label: "Dashboard Guru", to: "/guru" },
     { label: "Nilai", to: "/guru/nilai" },
     { label: "Profile", to: "/guru/profile" },
+    { label: "Nilai-Detail", to: "/guru/nilai-detail" },
   ];
   const siswaLinks = [
     { label: "Dashboard Siswa", to: "/siswa/dashboard" },

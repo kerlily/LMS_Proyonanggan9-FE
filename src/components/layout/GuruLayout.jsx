@@ -42,6 +42,7 @@ export default function GuruLayout({ children }) {
   const menu = [
     { icon: Home, label: "Dashboard", to: "/guru" },
     { icon: ClipboardList, label: "Nilai", to: "/guru/nilai" },
+    { icon: ClipboardList, label: "Nilai Detail", to: "/guru/nilai-detail" },
   ];
 
   const handleLogout = async () => {

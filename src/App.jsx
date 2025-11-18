@@ -37,7 +37,7 @@ import AdminResetPassword from "./pages/admin/Admin/AdminResetPassword";
 
 import NilaiAkhir from "./pages/guru/nilai/NilaiAkhir";
 import RawNilaiDashboard from "./pages/guru/hitung_nilai/RawNilaiDashboard";
-import RawNilaiForm from "./pages/guru/hitung_nilai/RawNilaiForm";
+import NilaiSikapForm from "./pages/guru/hitung_nilai/NilaiSikapForm";
 
 import DashboardLog from "./pages/admin/log/DashboardLog";
 
@@ -317,6 +317,14 @@ export default function App() {
               }
             />
              <Route
+              path="/guru/sikap"
+              element={
+                <RoleProtectedRoute allowed={["guru"]}>
+                  <NilaiSikapForm />
+                </RoleProtectedRoute>
+              }
+            />
+             <Route
               path="/guru/nilai-detail"
               element={
                 <RoleProtectedRoute allowed={["guru"]}>
@@ -324,14 +332,7 @@ export default function App() {
                 </RoleProtectedRoute>
               }
             />
-             <Route
-              path="/guru/nilai-details"
-              element={
-                <RoleProtectedRoute allowed={["guru"]}>
-                  <RawNilaiForm />
-                </RoleProtectedRoute>
-              }
-            />
+            
 
             {/* Fallback: you can add 404 route here if desired */}
           </Routes>

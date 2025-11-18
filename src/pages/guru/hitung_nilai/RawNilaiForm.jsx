@@ -1,6 +1,16 @@
 // src/pages/guru/hitung_nilai/RawNilaiForm.jsx
 import React, { useEffect, useState } from "react";
 
+/**
+ * Modal form untuk 1 siswa. Modern & ringkas.
+ *
+ * Props:
+ * - open (bool)
+ * - onClose()
+ * - row: { siswa_id, siswa_nama, nilai_data }  (nilai_data may be {})
+ * - struktur: struktur object from API (contains struktur array)
+ * - onSave(siswa_id, nilai_data) -> callback to write to parent edited state
+ */
 const RawNilaiForm = ({ open, onClose, row, struktur, onSave }) => {
   const [values, setValues] = useState({}); // { lmKey: { kolomKey: value } }
   const [errors, setErrors] = useState({});
