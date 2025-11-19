@@ -21,12 +21,9 @@ import ChangePasswordModal from "../ChangePasswordModal";
 export default function AdminLayout({ children }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-
-  // modal states
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
 
-  // user state - will update when localStorage changes
   const [user, setUser] = useState(() => {
     const raw = localStorage.getItem("userInfo") || localStorage.getItem("user");
     return raw ? JSON.parse(raw) : null;
@@ -35,7 +32,6 @@ export default function AdminLayout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Listen to localStorage changes to update user state
   useEffect(() => {
     const handleStorageChange = () => {
       const raw = localStorage.getItem("userInfo") || localStorage.getItem("user");
@@ -43,8 +39,6 @@ export default function AdminLayout({ children }) {
     };
 
     window.addEventListener('storage', handleStorageChange);
-    
-    // Also listen to custom event for same-tab updates
     window.addEventListener('userInfoUpdated', handleStorageChange);
 
     return () => {
@@ -69,11 +63,16 @@ export default function AdminLayout({ children }) {
     } catch {
       // ignore errors from serviceLogout
     }
+    
+    // FIXED: Clear SEMUA token termasuk siswa
     localStorage.removeItem("token");
-    localStorage.removeItem("userInfo");
     localStorage.removeItem("access_token");
+    localStorage.removeItem("userInfo");
     localStorage.removeItem("user");
-    navigate("/admin/login");
+    localStorage.removeItem("siswa_token");
+    localStorage.removeItem("siswa_userInfo");
+    
+    navigate("/admin/login", { replace: true });
   }, [navigate]);
 
   const isActive = (path) => {
@@ -94,25 +93,19 @@ export default function AdminLayout({ children }) {
   };
 
   const handleProfileSaved = () => {
-    // Reload user data from localStorage
     const raw = localStorage.getItem("userInfo") || localStorage.getItem("user");
     setUser(raw ? JSON.parse(raw) : null);
-    
-    // Dispatch custom event for other components
     window.dispatchEvent(new Event('userInfoUpdated'));
   };
 
-  // Get display name and initial
   const displayName = user?.nama ?? user?.name ?? "Admin";
   const userInitial = displayName.charAt(0).toUpperCase();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-      {/* Top Navigation Bar */}
       <nav className="bg-white border-b sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Logo & Brand */}
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-lg">A</span>
@@ -123,7 +116,6 @@ export default function AdminLayout({ children }) {
               </div>
             </div>
 
-            {/* Desktop Menu */}
             <div className="hidden md:flex items-center gap-4">
               {menu.map((item) => {
                 const Icon = item.icon;
@@ -145,7 +137,6 @@ export default function AdminLayout({ children }) {
               })}
             </div>
 
-            {/* Profile Dropdown - Desktop */}
             <div className="hidden md:block relative">
               <button
                 onClick={() => setProfileDropdownOpen((p) => !p)}
@@ -195,7 +186,6 @@ export default function AdminLayout({ children }) {
               )}
             </div>
 
-            {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen((v) => !v)}
               className="md:hidden p-2 rounded-lg hover:bg-gray-100"
@@ -206,7 +196,6 @@ export default function AdminLayout({ children }) {
           </div>
         </div>
 
-        {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden border-t bg-white">
             <div className="px-4 py-3 space-y-1">
@@ -258,10 +247,8 @@ export default function AdminLayout({ children }) {
         )}
       </nav>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">{children}</main>
 
-      {/* Profile modal instances */}
       <ProfileModal
         isOpen={profileModalOpen}
         onRequestClose={() => setProfileModalOpen(false)}

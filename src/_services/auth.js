@@ -31,15 +31,18 @@ export const login = async ({ email, password }) => {
 };
 
 export const logout = async () => {
+  
+  // Clear semua token
+  localStorage.removeItem("token");
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("userInfo");
+  localStorage.removeItem("user");
+  localStorage.removeItem("siswa_token");
+  localStorage.removeItem("siswa_userInfo");
+  
   try {
-    await api.post("/auth/logout").catch(() => {});
-  } catch (e) {
-    // ignore
-    console.warn("logout error (ignored):", e?.message || e);
-  } finally {
-    localStorage.removeItem("token");
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("userInfo");
-    localStorage.removeItem("user");
+    await api.post("/auth/logout");
+  } catch (err) {
+    console.warn("Logout API call failed (ignored):", err?.message || err);
   }
 };

@@ -46,17 +46,22 @@ export default function GuruLayout({ children }) {
   ];
 
   const handleLogout = async () => {
-    try {
-      await serviceLogout();
-    } catch {
-      // ignore
-    }
-    localStorage.removeItem("token");
-    localStorage.removeItem("userInfo");
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("user");
-    navigate("/admin/login");
-  };
+  try {
+    await serviceLogout();
+  } catch {
+    // ignore
+  }
+  
+  // FIXED: Clear SEMUA token termasuk siswa
+  localStorage.removeItem("token");
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("userInfo");
+  localStorage.removeItem("user");
+  localStorage.removeItem("siswa_token");
+  localStorage.removeItem("siswa_userInfo");
+  
+  navigate("/admin/login", { replace: true });
+};
 
   const isActive = (path) => {
     if (path === "/guru") return location.pathname === path;
