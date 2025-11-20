@@ -1,8 +1,10 @@
 // src/components/layout/SiswaLayout.jsx
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, BookOpen, Award, User, LogOut, Menu, X, Key } from "lucide-react";
-import { logout as serviceLogout } from "../../_services/auth";
+import AuthContext from "../../context/AuthContext";
+import api from "../../_api";
+import * as SiswaService from "../../_services/siswa";
 
 export default function SiswaLayout({ children }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -19,15 +21,55 @@ export default function SiswaLayout({ children }) {
     { icon: Award, label: "Nilai Saya", to: "/siswa/nilai" },
   ];
 
-  const handleLogout = async () => {
+  const { logout, setUser, setToken } = useContext(AuthContext);
+
+ const handleLogout = async () => {
+    // close menus
+    setProfileOpen(false);
+    setMobileMenuOpen(false)
+
+    // Preferred: use centralized logout if available
+    if (typeof logout === "function") {
+      try {
+        await logout(); // AuthProvider should clear state + storage
+        navigate("/siswa/login");
+        return;
+      } catch (err) {
+        console.warn("AuthContext.logout failed (fallback):", err);
+      }
+    }
+
+    // Fallback force-clear to avoid intermediate states causing remounts/spam
     try {
-      await serviceLogout();
-    } catch {
+      // reset context state if setters exposed
+      if (typeof setToken === "function") setToken(null);
+      if (typeof setUser === "function") setUser(null);
+    } catch (e) {
       // ignore
     }
-    localStorage.removeItem("token");
-    localStorage.removeItem("userInfo");
+
+    try {
+      localStorage.clear(); // blunt but effective fallback
+    } catch (e) {
+      console.warn("localStorage.clear failed:", e);
+    }
+
+    // remove axios auth header if present
+    try {
+      if (api?.defaults?.headers?.common) {
+        delete api.defaults.headers.common["Authorization"];
+      }
+    } catch (e) {
+      console.warn("Failed to remove axios Authorization header:", e);
+    }
+
+    // navigate immediately to login to avoid remount loops
     navigate("/siswa/login");
+
+    // best-effort backend logout (don't await to avoid blocking UI)
+    if (SiswaService && typeof SiswaService.logoutSiswa === "function") {
+      SiswaService.logoutSiswa().catch(() => {});
+    }
   };
 
   const isActive = (path) => {

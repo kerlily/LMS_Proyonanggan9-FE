@@ -1,9 +1,10 @@
 // src/pages/public/studentLogin.jsx
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState, useContext } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
-import { loginSiswa, getKelas, getSiswaByKelas } from "../../_services/siswa";
+import { getKelas, getSiswaByKelas } from "../../_services/siswa";
 import { Link } from "react-router-dom";
+import AuthContext from "../../context/AuthContext";
 
 /**
  * StudentLogin
@@ -13,6 +14,7 @@ import { Link } from "react-router-dom";
  */
 export default function StudentLogin() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
 
   const [kelasList, setKelasList] = useState([]);
@@ -27,30 +29,48 @@ export default function StudentLogin() {
   const [loadingLogin, setLoadingLogin] = useState(false);
   const [error, setError] = useState(null);
 
+  const { user, loginSiswa } = useContext(AuthContext);
+
   const getSiswaName = (s) =>
     s?.nama || s?.name || s?.full_name || s?.fullname || s?.username || "";
 
-  useEffect(() => {
-    // jika sudah login redirect
-    const u = localStorage.getItem("userInfo");
-    if (u) {
-      navigate("/siswa/dashboard");
-    }
-  }, [navigate]);
+  const handleLoadKelas = async () => {
+  setLoadingKelas(true);
+  try {
+    const res = await getKelas();
+    setKelasList(Array.isArray(res.data) ? res.data : []);
+  } catch (err) {
+    console.error("Gagal ambil kelas:", err);
+  } finally {
+    setLoadingKelas(false);
+  }
+};
 
-  useEffect(() => {
-    (async () => {
-      setLoadingKelas(true);
-      try {
-        const res = await getKelas();
-        setKelasList(Array.isArray(res.data) ? res.data : []);
-      } catch (err) {
-        console.error("Gagal ambil kelas:", err);
-      } finally {
-        setLoadingKelas(false);
-      }
-    })();
-  }, []);
+
+useEffect(() => {
+  // only redirect when there is a logged-in siswa with a siswa token
+  if (!user) return;
+
+  // deteksi token siswa di localStorage (fallback bila AuthProvider belum set token)
+  const siswaToken = localStorage.getItem("siswa_token");
+  const genericToken = localStorage.getItem("token") || localStorage.getItem("access_token");
+
+  // Deteksi apakah user adalah murid.
+  // Preferensi: periksa property role, kalau tidak ada, cek key unik siswa seperti kelas_id, nis, dll.
+  const isSiswa = user?.role === "siswa" || Boolean(user?.kelas_id) || Boolean(user?.siswa_id);
+
+  // hanya redirect kalau benar murid dan ada siswa token (atau generic token)
+  if (isSiswa && (siswaToken || genericToken)) {
+    // use navigate but DO NOT include navigate in deps to avoid re-run from unstable ref
+    if (location.pathname !== "/siswa/dashboard") {
+      navigate("/siswa/dashboard", { replace: true });
+    }
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [user, location.pathname]);
+
+
+ 
 
   useEffect(() => {
     // reset saat ganti kelas
@@ -94,7 +114,6 @@ export default function StudentLogin() {
     setLoadingLogin(true);
     try {
       await loginSiswa({ nama: namaValue, kelas_id: Number(kelasId), password });
-      navigate("/siswa/dashboard");
     } catch (err) {
       console.error("Login error:", err);
       const serverMsg = err?.response?.data ?? err?.message ?? "Login gagal";
@@ -121,19 +140,31 @@ export default function StudentLogin() {
             <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
               Pilih Kelas
             </label>
-            <select
-              value={kelasId}
-              onChange={(e) => setKelasId(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-sm sm:text-base"
-              required
-            >
-              <option value="">{loadingKelas ? "Memuat..." : "-- Pilih Kelas --"}</option>
-              {kelasList.map((k) => (
-                <option key={k.id} value={k.id}>
-                  {k.nama || k.name || (k.tingkat ? `${k.tingkat} ${k.nama || k.name}` : `${k.kelas || k.name}`)}
-                </option>
-              ))}
-            </select>
+            <button
+  type="button"
+  onClick={handleLoadKelas}
+  className="w-full py-2 mb-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+  disabled={loadingKelas}
+>
+  {loadingKelas ? "Memuat kelas..." : "Muat Daftar Kelas"}
+</button>
+
+            {kelasList.length > 0 && (
+  <select
+    value={kelasId}
+    onChange={(e) => setKelasId(e.target.value)}
+    className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg"
+    required
+  >
+    <option value="">-- Pilih Kelas --</option>
+    {kelasList.map((k) => (
+      <option key={k.id} value={k.id}>
+        {k.nama}
+      </option>
+    ))}
+  </select>
+)}
+
           </div>
 
           <div>

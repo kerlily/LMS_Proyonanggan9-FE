@@ -9,98 +9,62 @@ const api = axios.create({
   withCredentials: false,
 });
 
-// Helper function untuk clear semua token
-const clearAllTokens = () => {
-  console.log("🧹 Clearing all tokens...");
-  localStorage.removeItem("siswa_token");
-  localStorage.removeItem("siswa_userInfo");
-  localStorage.removeItem("token");
-  localStorage.removeItem("access_token");
-  localStorage.removeItem("userInfo");
-  localStorage.removeItem("user");
-};
 
-// Request interceptor - attach token
 api.interceptors.request.use(
   (config) => {
-    // FIXED: Gunakan token yang spesifik berdasarkan endpoint
-    const isSiswaEndpoint = config.url?.includes('/siswa');
-    
+    // Jangan otomatis menghapus token di interceptor.
+    const url = config.url || "";
+    const isLoginRequest = url.includes("/login");
+    if (isLoginRequest) {
+      // tidak perlu Authorization header untuk login endpoints
+      return config;
+    }
+
+    const isSiswaEndpoint = url.includes("/siswa");
+    const isPublicKelasList = url.includes("/kelas") && !url.includes("/siswa");
+
     let finalToken = null;
-    
     if (isSiswaEndpoint) {
-      // Untuk endpoint siswa, HANYA gunakan siswa_token
       finalToken = localStorage.getItem("siswa_token");
-      
       if (!finalToken) {
-        console.warn("⚠️ No siswa_token for siswa endpoint:", config.url);
-      } else {
-        console.log("✅ Using siswa_token for:", config.url);
+        // hanya log; jangan hapus token lain
+        console.warn(`⚠️ No siswa_token for siswa endpoint: ${url}`);
       }
     } else {
-      // Untuk endpoint admin/guru, HANYA gunakan token (bukan siswa_token)
+      // untuk admin/guru endpoint
       finalToken = localStorage.getItem("token") || localStorage.getItem("access_token");
-      
-      if (finalToken) {
-        console.log("✅ Using admin/guru token for:", config.url);
+      if (!finalToken && !isPublicKelasList) {
+        console.warn(`⚠️ No admin token for protected endpoint: ${url}`);
       }
     }
-    
+
     if (finalToken) {
       config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${finalToken}`;
-    } else {
-      // Jangan attach Authorization header jika tidak ada token
-      // Untuk public endpoints seperti /api/kelas
-      if (config.headers?.Authorization) {
-        delete config.headers.Authorization;
-      }
     }
-    
+
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response interceptor - handle 401 Unauthorized
+// Response interceptor - jangan clear token pada response sukses
 api.interceptors.response.use(
-  (response) => {
-    // JANGAN clear token pada response sukses!
-    return response;
-  },
+  (response) => response,
   (error) => {
     console.error("🔴 Axios response error:", {
       url: error.config?.url,
       status: error.response?.status,
       message: error.response?.data?.message || error.message
     });
-    
+
+    // Hanya clear token jika 401 dan Anda memang ingin memaksa logout
     if (error.response?.status === 401) {
-      const isSiswaEndpoint = error.config?.url?.includes('/siswa');
-      
-      // PENTING: Jangan clear token jika ini request dari login page
-      const isLoginRequest = error.config?.url?.includes('/login');
-      
-      if (!isLoginRequest) {
-        console.warn("⚠️ Got 401 error, clearing tokens...");
-        clearAllTokens();
-        
-        console.log("🔄 Redirecting to login...");
-        // Redirect berdasarkan endpoint
-        if (isSiswaEndpoint) {
-          window.location.href = '/siswa/login';
-        } else {
-          window.location.href = '/admin/login';
-        }
-      } else {
-        console.log("⚠️ Login request failed (401), NOT clearing tokens");
-      }
+      // optional: only clear the relevant token, do not aggressively clear everything
+      // clearAllTokens(); // <-- jangan otomatis panggil kecuali Anda ingin logout global
     }
-    
+
     return Promise.reject(error);
   }
 );
-
 export default api;

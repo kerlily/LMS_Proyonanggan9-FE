@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { getNilaiMe, changePassword, logoutSiswa } from "../../_services/siswa";
 
@@ -30,14 +30,23 @@ export default function StudentDashboard() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+    const didFetchRef = useRef(false);
+
   useEffect(() => {
-    const token = localStorage.getItem("siswatoken");
-    if (!token) {
-      navigate("/siswa/login");
+   const siswaToken = localStorage.getItem("siswa_token") || localStorage.getItem("token");
+    if (!siswaToken) {
+     navigate("/siswa/login");
       return;
     }
 
     let mounted = true;
+    if (didFetchRef.current) {
+      // sudah memanggil sebelumnya pada lifecycle ini => hindari duplicate request
+      setLoading(false);
+      return;
+    }
+    didFetchRef.current = true;
+
     (async () => {
       try {
         const res = await getNilaiMe();

@@ -43,7 +43,7 @@ export default function AdminLayout({ children }) {
   useEffect(() => {
     const handleStorageChange = (e) => {
       // Prevent re-entry
-      if (updateInProgressRef.current) return;
+      if (updateInProgressRef.current) return; 
       
       try {
         updateInProgressRef.current = true;

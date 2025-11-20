@@ -27,32 +27,43 @@ export default function AuthProvider({ children }) {
     return localStorage.getItem("token") || localStorage.getItem("access_token") || null;
   });
   const [loading, setLoading] = useState(false);
+  // indicates initial hydration from localStorage is still running
+  const [initializing, setInitializing] = useState(true);
 
-  // keep localStorage in sync
+ // keep localStorage in sync
   useEffect(() => {
-    if (token) {
+    // only write when token actually changed to avoid storage churn
+    const currentToken = localStorage.getItem("token") || localStorage.getItem("access_token") || null;
+    if (token && token !== currentToken) {
       localStorage.setItem("token", token);
-      // also keep access_token for compatibility
       localStorage.setItem("access_token", token);
-    } else {
+    } else if (!token && currentToken) {
       localStorage.removeItem("token");
       localStorage.removeItem("access_token");
     }
   }, [token]);
 
   useEffect(() => {
-    if (user) {
+    // only write when user actually changed (shallow JSON compare)
+    const rawStored = localStorage.getItem("userInfo") || localStorage.getItem("user");
+    const stored = rawStored ? (() => { try { return JSON.parse(rawStored); } catch { return null; } })() : null;
+    const sameUser =
+      (user === null && stored === null) ||
+      (user && stored && JSON.stringify(user) === JSON.stringify(stored));
+
+    if (user && !sameUser) {
       try {
         localStorage.setItem("userInfo", JSON.stringify(user));
         localStorage.setItem("user", JSON.stringify(user));
       } catch (e) {
         console.warn("AuthProvider: gagal menyimpan user ke localStorage", e);
       }
-    } else {
+    } else if (!user && stored) {
       localStorage.removeItem("userInfo");
       localStorage.removeItem("user");
     }
   }, [user]);
+
 
   // Admin/Guru login wrapper (uses existing service if available)
   const login = useCallback(async (payload) => {
@@ -96,58 +107,73 @@ export default function AuthProvider({ children }) {
 
   // Logout wrapper: try both services when possible, but always clear client state
   const logout = useCallback(async () => {
+    // Immediately clear client auth state and storage to avoid intermediate
+    // states that may cause redirect loops or repeated mounts in other
+    // components (which can trigger repeated requests).
+    setToken(null);
+    setUser(null);
+    localStorage.removeItem("token");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("userInfo");
+    localStorage.removeItem("user");
+    localStorage.removeItem("siswa_token");
+    localStorage.removeItem("siswa_userInfo");
+
     setLoading(true);
     try {
-      // try siswa logout first
-      try {
-        if (SiswaService && typeof SiswaService.logoutSiswa === "function") {
+      // Fire logout requests but don't rely on them for client state.
+      // If they fail, we still consider the client logged out.
+      if (SiswaService && typeof SiswaService.logoutSiswa === "function") {
+        try {
+          // don't await too long; await but ignore errors
           await SiswaService.logoutSiswa();
+        } catch (e) {
+          console.warn("logout: SiswaService.logoutSiswa() error (ignored):", e?.message || e);
         }
-      } catch (e) {
-        // ignore
-        console.log("logout: SiswaService.logoutSiswa() error (ignored):", e?.message || e);
       }
 
-      // try admin logout
-      try {
-        if (AdminAuthService && typeof AdminAuthService.logout === "function") {
+      if (AdminAuthService && typeof AdminAuthService.logout === "function") {
+        try {
           await AdminAuthService.logout();
+        } catch (e) {
+          console.warn("logout: AdminAuthService.logout() error (ignored):", e?.message || e);
         }
-      } catch (e) {
-        // ignore
-        console.log("logout: AdminAuthService.logout() error (ignored):", e?.message || e);
       }
     } finally {
-      setToken(null);
-      setUser(null);
-      // cleanup localStorage keys
-      localStorage.removeItem("token");
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("userInfo");
-      localStorage.removeItem("user");
       setLoading(false);
     }
   }, []);
 
   // helper to hydrate state from localStorage if app reloaded
-  useEffect(() => {
-    const rawUser = localStorage.getItem("userInfo") || localStorage.getItem("user");
-    const rawToken = localStorage.getItem("token") || localStorage.getItem("access_token");
-    if (!user && rawUser) {
-      try {
-        setUser(JSON.parse(rawUser));
-      } catch {
-        // ignore
-      }
+ useEffect(() => {
+  const rawUser = localStorage.getItem("userInfo") || localStorage.getItem("user");
+  const rawToken =
+    localStorage.getItem("token") ||
+    localStorage.getItem("access_token") ||
+    localStorage.getItem("siswa_token") ||
+    null;
+  if (!user && rawUser) {
+    try {
+      const parsed = JSON.parse(rawUser);
+      setUser((prev) => (prev && JSON.stringify(prev) === JSON.stringify(parsed) ? prev : parsed));
+    } catch {
+      // ignore parse error
     }
-    if (!token && rawToken) setToken(rawToken);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }
+  if (!token && rawToken) {
+    setToken((prev) => (prev === rawToken ? prev : rawToken));
+  }
+  // mark hydration finished on next microtask
+  Promise.resolve().then(() => setInitializing(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
+
 
   const contextValue = {
     user,
     token,
     loading,
+    initializing,
     login,         // use for admin/guru (payload: { email, password })
     loginSiswa,    // use for siswa (payload: { nama, kelas_id, password })
     logout,        // clears storage & tries backend logout
