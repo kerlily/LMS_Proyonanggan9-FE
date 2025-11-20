@@ -31,7 +31,7 @@ export default function StudentDashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("siswatoken");
     if (!token) {
       navigate("/siswa/login");
       return;

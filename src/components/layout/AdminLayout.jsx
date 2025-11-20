@@ -1,5 +1,5 @@
 // src/components/layout/AdminLayout.jsx
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
@@ -24,28 +24,55 @@ export default function AdminLayout({ children }) {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
 
-  const [user, setUser] = useState(() => {
-    const raw = localStorage.getItem("userInfo") || localStorage.getItem("user");
-    return raw ? JSON.parse(raw) : null;
+  // Use ref to store user data to avoid triggering re-renders
+  const [userState, setUserState] = useState(() => {
+    try {
+      const raw = localStorage.getItem("userInfo") || localStorage.getItem("user");
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      console.error("Error parsing user info:", e);
+      return null;
+    }
   });
 
   const location = useLocation();
   const navigate = useNavigate();
+  const updateInProgressRef = useRef(false);
 
+  // Listen to storage changes - FIXED: Proper dependency handling
   useEffect(() => {
-    const handleStorageChange = () => {
-      const raw = localStorage.getItem("userInfo") || localStorage.getItem("user");
-      setUser(raw ? JSON.parse(raw) : null);
+    const handleStorageChange = (e) => {
+      // Prevent re-entry
+      if (updateInProgressRef.current) return;
+      
+      try {
+        updateInProgressRef.current = true;
+        const raw = localStorage.getItem("userInfo") || localStorage.getItem("user");
+        const newUser = raw ? JSON.parse(raw) : null;
+        
+        // Only update if actually different
+        setUserState(prevUser => {
+          const prevStr = JSON.stringify(prevUser);
+          const newStr = JSON.stringify(newUser);
+          return prevStr !== newStr ? newUser : prevUser;
+        });
+      } catch (e) {
+        console.error("Error updating user:", e);
+      } finally {
+        updateInProgressRef.current = false;
+      }
     };
 
+    // For cross-tab changes
     window.addEventListener('storage', handleStorageChange);
+    // For same-tab changes
     window.addEventListener('userInfoUpdated', handleStorageChange);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('userInfoUpdated', handleStorageChange);
     };
-  }, []);
+  }, []); // Empty deps - only setup once
 
   const menu = [
     { icon: Home, label: "Overview", to: "/admin" },
@@ -60,11 +87,11 @@ export default function AdminLayout({ children }) {
   const handleLogout = useCallback(async () => {
     try {
       await serviceLogout();
-    } catch {
-      // ignore errors from serviceLogout
+    } catch (err) {
+      console.warn("Logout service error:", err);
     }
     
-    // FIXED: Clear SEMUA token termasuk siswa
+    // Clear all tokens
     localStorage.removeItem("token");
     localStorage.removeItem("access_token");
     localStorage.removeItem("userInfo");
@@ -80,25 +107,38 @@ export default function AdminLayout({ children }) {
     return location.pathname.startsWith(path);
   };
 
-  const openProfileModal = () => {
+  const openProfileModal = useCallback(() => {
     setProfileModalOpen(true);
     setProfileDropdownOpen(false);
     setMobileMenuOpen(false);
-  };
+  }, []);
 
-  const openPasswordModal = () => {
+  const openPasswordModal = useCallback(() => {
     setPasswordModalOpen(true);
     setProfileDropdownOpen(false);
     setMobileMenuOpen(false);
-  };
+  }, []);
 
-  const handleProfileSaved = () => {
-    const raw = localStorage.getItem("userInfo") || localStorage.getItem("user");
-    setUser(raw ? JSON.parse(raw) : null);
-    window.dispatchEvent(new Event('userInfoUpdated'));
-  };
+  const handleProfileSaved = useCallback(() => {
+    try {
+      const raw = localStorage.getItem("userInfo") || localStorage.getItem("user");
+      const newUser = raw ? JSON.parse(raw) : null;
+      
+      setUserState(prevUser => {
+        const prevStr = JSON.stringify(prevUser);
+        const newStr = JSON.stringify(newUser);
+        return prevStr !== newStr ? newUser : prevUser;
+      });
+      
+      // Dispatch event for other components
+      window.dispatchEvent(new Event('userInfoUpdated'));
+    } catch (e) {
+      console.error("Error in handleProfileSaved:", e);
+    }
+  }, []);
 
-  const displayName = user?.nama ?? user?.name ?? "Admin";
+  // Memoize display values to prevent recalculation
+  const displayName = userState?.nama ?? userState?.name ?? "Admin";
   const userInitial = displayName.charAt(0).toUpperCase();
 
   return (
@@ -252,7 +292,7 @@ export default function AdminLayout({ children }) {
       <ProfileModal
         isOpen={profileModalOpen}
         onRequestClose={() => setProfileModalOpen(false)}
-        initialUser={user}
+        initialUser={userState}
         onSaved={handleProfileSaved}
       />
 

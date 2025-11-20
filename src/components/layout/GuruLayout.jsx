@@ -1,5 +1,5 @@
 // src/components/layout/GuruLayout.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, ClipboardList, User, LogOut, Menu, X, Key } from "lucide-react";
 import { logout as serviceLogout } from "../../_services/auth";
@@ -9,25 +9,46 @@ import ChangePasswordModal from "../ChangePasswordModal";
 export default function GuruLayout({ children }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  
-  // Modal states
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
 
-  // User state - will update when localStorage changes
-  const [user, setUser] = useState(() => {
-    const raw = localStorage.getItem("userInfo") || localStorage.getItem("user");
-    return raw ? JSON.parse(raw) : null;
+  // FIXED: Use controlled state update to prevent infinite loop
+  const [userState, setUserState] = useState(() => {
+    try {
+      const raw = localStorage.getItem("userInfo") || localStorage.getItem("user");
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      console.error("Error parsing user info:", e);
+      return null;
+    }
   });
 
   const location = useLocation();
   const navigate = useNavigate();
+  const updateInProgressRef = useRef(false);
 
-  // Listen to localStorage changes to update user state
+  // FIXED: Listen to localStorage changes with proper guards
   useEffect(() => {
     const handleStorageChange = () => {
-      const raw = localStorage.getItem("userInfo") || localStorage.getItem("user");
-      setUser(raw ? JSON.parse(raw) : null);
+      // Prevent re-entry
+      if (updateInProgressRef.current) return;
+      
+      try {
+        updateInProgressRef.current = true;
+        const raw = localStorage.getItem("userInfo") || localStorage.getItem("user");
+        const newUser = raw ? JSON.parse(raw) : null;
+        
+        // Only update if actually different
+        setUserState(prevUser => {
+          const prevStr = JSON.stringify(prevUser);
+          const newStr = JSON.stringify(newUser);
+          return prevStr !== newStr ? newUser : prevUser;
+        });
+      } catch (e) {
+        console.error("Error updating user:", e);
+      } finally {
+        updateInProgressRef.current = false;
+      }
     };
 
     window.addEventListener('storage', handleStorageChange);
@@ -37,7 +58,7 @@ export default function GuruLayout({ children }) {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('userInfoUpdated', handleStorageChange);
     };
-  }, []);
+  }, []); // Empty deps - only setup once
 
   const menu = [
     { icon: Home, label: "Dashboard", to: "/guru" },
@@ -45,75 +66,82 @@ export default function GuruLayout({ children }) {
     { icon: ClipboardList, label: "Nilai Detail", to: "/guru/nilai-detail" },
   ];
 
-  const handleLogout = async () => {
-  try {
-    await serviceLogout();
-  } catch {
-    // ignore
-  }
-  
-  // FIXED: Clear SEMUA token termasuk siswa
-  localStorage.removeItem("token");
-  localStorage.removeItem("access_token");
-  localStorage.removeItem("userInfo");
-  localStorage.removeItem("user");
-  localStorage.removeItem("siswa_token");
-  localStorage.removeItem("siswa_userInfo");
-  
-  navigate("/admin/login", { replace: true });
-};
+  const handleLogout = useCallback(async () => {
+    try {
+      await serviceLogout();
+    } catch (err) {
+      console.warn("Logout service error:", err);
+    }
+    
+    // Clear all tokens
+    localStorage.removeItem("token");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("userInfo");
+    localStorage.removeItem("user");
+    localStorage.removeItem("siswa_token");
+    localStorage.removeItem("siswa_userInfo");
+    
+    navigate("/admin/login", { replace: true });
+  }, [navigate]);
 
   const isActive = (path) => {
     if (path === "/guru") return location.pathname === path;
     return location.pathname.startsWith(path);
   };
 
-  const openProfileModal = () => {
+  const openProfileModal = useCallback(() => {
     setProfileModalOpen(true);
     setProfileOpen(false);
     setMobileMenuOpen(false);
-  };
+  }, []);
 
-  const openPasswordModal = () => {
+  const openPasswordModal = useCallback(() => {
     setPasswordModalOpen(true);
     setProfileOpen(false);
     setMobileMenuOpen(false);
-  };
+  }, []);
 
-  const handleProfileSaved = () => {
-    // Reload user data from localStorage
-    const raw = localStorage.getItem("userInfo") || localStorage.getItem("user");
-    setUser(raw ? JSON.parse(raw) : null);
-    
-    // Dispatch custom event
-    window.dispatchEvent(new Event('userInfoUpdated'));
-  };
+  const handleProfileSaved = useCallback(() => {
+    try {
+      const raw = localStorage.getItem("userInfo") || localStorage.getItem("user");
+      const newUser = raw ? JSON.parse(raw) : null;
+      
+      setUserState(prevUser => {
+        const prevStr = JSON.stringify(prevUser);
+        const newStr = JSON.stringify(newUser);
+        return prevStr !== newStr ? newUser : prevUser;
+      });
+      
+      // Dispatch custom event
+      window.dispatchEvent(new Event('userInfoUpdated'));
+    } catch (e) {
+      console.error("Error in handleProfileSaved:", e);
+    }
+  }, []);
 
-  // FIXED: Get display name, initial, and photo URL dengan pattern yang sama
-  const displayName = user?.nama ?? user?.name ?? "Guru";
+  // Memoize display values
+  const displayName = userState?.nama ?? userState?.name ?? "Guru";
   const userInitial = displayName.charAt(0).toUpperCase();
   
-const buildPhotoUrl = (photoPath) => {
-  if (!photoPath) return null;
-  if (photoPath.startsWith('http')) return photoPath;
-  
-  const baseUrl = import.meta.env.VITE_API_URL;
-  return `${baseUrl}/storage/${photoPath}`;
-};
+  const buildPhotoUrl = (photoPath) => {
+    if (!photoPath) return null;
+    if (photoPath.startsWith('http')) return photoPath;
+    
+    const baseUrl = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
+    return `${baseUrl}/storage/${photoPath}`;
+  };
 
-const avatarPhotoUrl = user?.photo_url ?? 
-  user?.guru?.photo_url ?? 
-  buildPhotoUrl(user?.guru?.photo) ?? 
-  buildPhotoUrl(user?.photo) ?? 
-  null;
+  const avatarPhotoUrl = userState?.photo_url ?? 
+    userState?.guru?.photo_url ?? 
+    buildPhotoUrl(userState?.guru?.photo) ?? 
+    buildPhotoUrl(userState?.photo) ?? 
+    null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-      {/* Top Navigation Bar */}
       <nav className="bg-white border-b sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Logo & Brand */}
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-lg">G</span>
@@ -124,7 +152,6 @@ const avatarPhotoUrl = user?.photo_url ??
               </div>
             </div>
 
-            {/* Desktop Menu */}
             <div className="hidden md:flex items-center gap-6">
               {menu.map((item) => {
                 const Icon = item.icon;
@@ -146,7 +173,6 @@ const avatarPhotoUrl = user?.photo_url ??
               })}
             </div>
 
-            {/* Profile Dropdown - Desktop */}
             <div className="hidden md:block relative">
               <button
                 onClick={() => setProfileOpen(!profileOpen)}
@@ -160,9 +186,10 @@ const avatarPhotoUrl = user?.photo_url ??
                     alt={displayName}
                     className="w-9 h-9 rounded-full object-cover"
                     onError={(e) => {
-                      // Fallback jika gambar gagal load
                       e.target.style.display = 'none';
-                      e.target.nextSibling.style.display = 'flex';
+                      if (e.target.nextSibling) {
+                        e.target.nextSibling.style.display = 'flex';
+                      }
                     }}
                   />
                 ) : null}
@@ -211,7 +238,6 @@ const avatarPhotoUrl = user?.photo_url ??
               )}
             </div>
 
-            {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 rounded-lg hover:bg-gray-100"
@@ -222,7 +248,6 @@ const avatarPhotoUrl = user?.photo_url ??
           </div>
         </div>
 
-        {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden border-t bg-white">
             <div className="px-4 py-3 space-y-1">
@@ -276,20 +301,17 @@ const avatarPhotoUrl = user?.photo_url ??
         )}
       </nav>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>
 
-      {/* Profile Modal */}
       <ProfileModal
         isOpen={profileModalOpen}
         onRequestClose={() => setProfileModalOpen(false)}
-        initialUser={user}
+        initialUser={userState}
         onSaved={handleProfileSaved}
       />
 
-      {/* Change Password Modal */}
       <ChangePasswordModal 
         isOpen={passwordModalOpen} 
         onRequestClose={() => setPasswordModalOpen(false)} 

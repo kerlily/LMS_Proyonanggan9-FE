@@ -1,4 +1,4 @@
-// src/_api/axios.js or src/_api/index.js
+// src/_api/index.js (ATAU src/_api/axios.js - pastikan hanya ada 1 file!)
 import axios from "axios";
 
 const api = axios.create({
@@ -6,23 +6,55 @@ const api = axios.create({
   headers: {
     Accept: "application/json",
   },
-  withCredentials: false, // kita pakai JWT di localStorage
+  withCredentials: false,
 });
+
+// Helper function untuk clear semua token
+const clearAllTokens = () => {
+  console.log("🧹 Clearing all tokens...");
+  localStorage.removeItem("siswa_token");
+  localStorage.removeItem("siswa_userInfo");
+  localStorage.removeItem("token");
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("userInfo");
+  localStorage.removeItem("user");
+};
 
 // Request interceptor - attach token
 api.interceptors.request.use(
   (config) => {
-    // Priority: siswa_token > token > access_token
-    const siswaToken = localStorage.getItem("siswa_token");
-    const token = localStorage.getItem("token");
-    const accessToken = localStorage.getItem("access_token");
+    // FIXED: Gunakan token yang spesifik berdasarkan endpoint
+    const isSiswaEndpoint = config.url?.includes('/siswa');
     
-    // Gunakan token yang ada (siswa punya priority)
-    const finalToken = siswaToken || token || accessToken;
+    let finalToken = null;
+    
+    if (isSiswaEndpoint) {
+      // Untuk endpoint siswa, HANYA gunakan siswa_token
+      finalToken = localStorage.getItem("siswa_token");
+      
+      if (!finalToken) {
+        console.warn("⚠️ No siswa_token for siswa endpoint:", config.url);
+      } else {
+        console.log("✅ Using siswa_token for:", config.url);
+      }
+    } else {
+      // Untuk endpoint admin/guru, HANYA gunakan token (bukan siswa_token)
+      finalToken = localStorage.getItem("token") || localStorage.getItem("access_token");
+      
+      if (finalToken) {
+        console.log("✅ Using admin/guru token for:", config.url);
+      }
+    }
     
     if (finalToken) {
       config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${finalToken}`;
+    } else {
+      // Jangan attach Authorization header jika tidak ada token
+      // Untuk public endpoints seperti /api/kelas
+      if (config.headers?.Authorization) {
+        delete config.headers.Authorization;
+      }
     }
     
     return config;
@@ -34,31 +66,36 @@ api.interceptors.request.use(
 
 // Response interceptor - handle 401 Unauthorized
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // JANGAN clear token pada response sukses!
+    return response;
+  },
   (error) => {
-    // Jika 401 dan ada response dari server
+    console.error("🔴 Axios response error:", {
+      url: error.config?.url,
+      status: error.response?.status,
+      message: error.response?.data?.message || error.message
+    });
+    
     if (error.response?.status === 401) {
-      // Check apakah ini siswa atau admin/guru berdasarkan URL
-      const isSiswaEndpoint = error.config?.url?.includes('/siswa/');
+      const isSiswaEndpoint = error.config?.url?.includes('/siswa');
       
-      // Clear token yang sesuai
-      if (isSiswaEndpoint) {
-        localStorage.removeItem("siswa_token");
-        localStorage.removeItem("siswa_userInfo");
-      }
+      // PENTING: Jangan clear token jika ini request dari login page
+      const isLoginRequest = error.config?.url?.includes('/login');
       
-      // Always clear generic tokens on 401
-      localStorage.removeItem("token");
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("userInfo");
-      localStorage.removeItem("user");
-      
-      // Optional: redirect ke login
-      // Uncomment jika ingin auto-redirect
-      if (isSiswaEndpoint) {
-        window.location.href = '/siswa/login';
+      if (!isLoginRequest) {
+        console.warn("⚠️ Got 401 error, clearing tokens...");
+        clearAllTokens();
+        
+        console.log("🔄 Redirecting to login...");
+        // Redirect berdasarkan endpoint
+        if (isSiswaEndpoint) {
+          window.location.href = '/siswa/login';
+        } else {
+          window.location.href = '/admin/login';
+        }
       } else {
-        window.location.href = '/admin/login';
+        console.log("⚠️ Login request failed (401), NOT clearing tokens");
       }
     }
     

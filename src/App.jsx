@@ -40,6 +40,8 @@ import NilaiAkhir from "./pages/guru/nilai/NilaiAkhir";
 
 import DashboardLog from "./pages/admin/log/DashboardLog";
 import NilaiDetailDashboard from "./pages/guru/hitung_nilai/NilaiDetailDashboard";
+import TestSiswaLogin from "./pages/public/TestSiswaLogin";
+
 
 export default function App() {
   const location = useLocation();
@@ -130,7 +132,7 @@ export default function App() {
             />
 
             {/* Public / Auth */}
-            <Route path="/siswa/login" element={<StudentLogin />} />
+            <Route path="/siswa/login" element={<TestSiswaLogin />} />
             <Route path="/admin/login" element={<AdminLogin />} />
 
             {/* Student protected */}
