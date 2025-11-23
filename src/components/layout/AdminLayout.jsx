@@ -42,7 +42,7 @@ export default function AdminLayout({ children }) {
   // Listen to storage changes - FIXED: Proper dependency handling
   useEffect(() => {
     const handleStorageChange = (e) => {
-      // Prevent re-entry
+      console.log("Storage change detected:", e);
       if (updateInProgressRef.current) return; 
       
       try {
@@ -61,6 +61,7 @@ export default function AdminLayout({ children }) {
       } finally {
         updateInProgressRef.current = false;
       }
+      
     };
 
     // For cross-tab changes

@@ -20,7 +20,8 @@ api.interceptors.request.use(
       return config;
     }
 
-    const isSiswaEndpoint = url.includes("/siswa");
+    const isSiswaEndpoint = 
+      url.startsWith("/siswa") || url.startsWith("siswa");
     const isPublicKelasList = url.includes("/kelas") && !url.includes("/siswa");
 
     let finalToken = null;

@@ -46,6 +46,10 @@ export default function StudentLogin() {
   }
 };
 
+  // load kelas otomatis saat komponen mount
+  useEffect(() => {
+    handleLoadKelas();
+  }, []);
 
 useEffect(() => {
   // only redirect when there is a logged-in siswa with a siswa token
@@ -140,30 +144,20 @@ useEffect(() => {
             <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1">
               Pilih Kelas
             </label>
-            <button
-  type="button"
-  onClick={handleLoadKelas}
-  className="w-full py-2 mb-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-  disabled={loadingKelas}
->
-  {loadingKelas ? "Memuat kelas..." : "Muat Daftar Kelas"}
-</button>
-
-            {kelasList.length > 0 && (
-  <select
-    value={kelasId}
-    onChange={(e) => setKelasId(e.target.value)}
-    className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg"
-    required
-  >
-    <option value="">-- Pilih Kelas --</option>
-    {kelasList.map((k) => (
-      <option key={k.id} value={k.id}>
-        {k.nama}
-      </option>
-    ))}
-  </select>
-)}
+            <select
+              value={kelasId}
+              onChange={(e) => setKelasId(e.target.value)}
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg"
+              required
+              disabled={loadingKelas}
+            >
+              <option value="">{loadingKelas ? "Memuat kelas..." : "-- Pilih Kelas --"}</option>
+              {kelasList.map((k) => (
+                <option key={k.id} value={k.id}>
+                  {k.nama}
+                </option>
+              ))}
+            </select>
 
           </div>
 
@@ -213,6 +207,7 @@ useEffect(() => {
           {error && (
             <div className="text-red-500 text-sm bg-red-50 p-2 rounded-lg">
               {error}
+              
             </div>
           )}
 

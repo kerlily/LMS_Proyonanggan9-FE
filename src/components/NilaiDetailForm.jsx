@@ -26,8 +26,9 @@ export default function NilaiDetailForm({ open, onClose, row, struktur, onSave }
       // ASLIM & ASAS di root
       const aslimKey = struktur.struktur.aslim.kolom_key;
       const asasKey = struktur.struktur.asas.kolom_key;
-      initial[aslimKey] = row.nilai_data?.[aslimKey] ?? "";
-      initial[asasKey] = row.nilai_data?.[asasKey] ?? "";
+      initial[aslimKey] = row.nilai_data?.[aslimKey] ?? null;
+      initial[asasKey] = row.nilai_data?.[asasKey] ?? null;
+
     }
 
     setValues(initial);
@@ -37,7 +38,8 @@ export default function NilaiDetailForm({ open, onClose, row, struktur, onSave }
   if (!open || !row) return null;
 
   const onChange = (key, value) => {
-    const v = value === "" ? "" : Number(value);
+    const v = value === "" ? null : Number(value);
+
     
     // Jika key adalah nested (lm.kolom), parse dulu
     if (key.includes('.')) {
@@ -107,8 +109,9 @@ export default function NilaiDetailForm({ open, onClose, row, struktur, onSave }
       // Add ASLIM & ASAS
       const aslimKey = struktur.struktur.aslim.kolom_key;
       const asasKey = struktur.struktur.asas.kolom_key;
-      nilaiData[aslimKey] = values[aslimKey];
-      nilaiData[asasKey] = values[asasKey];
+      nilaiData[aslimKey] = values[aslimKey] ?? null;
+      nilaiData[asasKey] = values[asasKey] ?? null;
+
     }
     
     onSave(row.siswa_id, nilaiData);

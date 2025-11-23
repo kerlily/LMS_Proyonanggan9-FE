@@ -45,7 +45,7 @@ export default function SiswaLayout({ children }) {
       if (typeof setToken === "function") setToken(null);
       if (typeof setUser === "function") setUser(null);
     } catch (e) {
-      // ignore
+      console.warn("Failed to reset AuthContext state:", e);
     }
 
     try {
