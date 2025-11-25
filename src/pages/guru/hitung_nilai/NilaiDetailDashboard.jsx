@@ -215,7 +215,11 @@ export default function NilaiDetailDashboard() {
     
     const payloadArray = rows.map((r) => ({
       siswa_id: r.siswa_id,
-      nilai_data: edited[r.siswa_id] || r.nilai_data || {},
+      nilai_data: typeof (edited[r.siswa_id] || r.nilai_data) === "object"
+  && !Array.isArray(edited[r.siswa_id] || r.nilai_data)
+  ? (edited[r.siswa_id] || r.nilai_data)
+  : {},
+
     }));
 
     try {

@@ -15,30 +15,32 @@ export default function NilaiDetailForm({ open, onClose, row, struktur, onSave }
     if (struktur.struktur?.lingkup_materi) {
       struktur.struktur.lingkup_materi.forEach((lm) => {
         const lmKey = lm.lm_key;
-        initial[lmKey] = {};
-        
-        lm.formatif.forEach((fmt) => {
-          const existing = row.nilai_data?.[lmKey]?.[fmt.kolom_key];
-          initial[lmKey][fmt.kolom_key] = existing ?? "";
-        });
+        initial[lmKey] = { ...(row.nilai_data?.[lmKey] ?? {}) };
+
+lm.formatif.forEach((fmt) => {
+  const existing = row.nilai_data?.[lmKey]?.[fmt.kolom_key];
+  initial[lmKey][fmt.kolom_key] = existing ?? "";
+});
       });
 
       // ASLIM & ASAS di root
       const aslimKey = struktur.struktur.aslim.kolom_key;
       const asasKey = struktur.struktur.asas.kolom_key;
-      initial[aslimKey] = row.nilai_data?.[aslimKey] ?? null;
-      initial[asasKey] = row.nilai_data?.[asasKey] ?? null;
+      initial[aslimKey] = row.nilai_data?.[aslimKey] ?? "";
+initial[asasKey] = row.nilai_data?.[asasKey] ?? "";
+
 
     }
-
+    
     setValues(initial);
+     console.log("🔥 INITIAL VALUES:", initial); // <--- TAMBAHKAN INI
     setErrors({});
   }, [row, struktur]);
 
   if (!open || !row) return null;
 
   const onChange = (key, value) => {
-    const v = value === "" ? null : Number(value);
+    const v = value === "" ? "" : Number(value);
 
     
     // Jika key adalah nested (lm.kolom), parse dulu
