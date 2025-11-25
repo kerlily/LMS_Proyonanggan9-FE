@@ -40,6 +40,7 @@ import NilaiAkhir from "./pages/guru/nilai/NilaiAkhir";
 
 import DashboardLog from "./pages/admin/log/DashboardLog";
 import NilaiDetailDashboard from "./pages/guru/hitung_nilai/NilaiDetailDashboard";
+import StrukturNilai from "./pages/guru/hitung_nilai/StrukturNilai";
 
 
 export default function App() {
@@ -323,6 +324,15 @@ export default function App() {
               element={
                 <RoleProtectedRoute allowed={["guru"]}>
                   <NilaiDetailDashboard />
+                </RoleProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/guru/struktur-nilai"
+              element={
+                <RoleProtectedRoute allowed={["guru"]}>
+                  <StrukturNilai />
                 </RoleProtectedRoute>
               }
             />

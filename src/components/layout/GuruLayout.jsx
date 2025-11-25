@@ -1,7 +1,7 @@
 // src/components/layout/GuruLayout.jsx
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, ClipboardList, User, LogOut, Menu, X, Key } from "lucide-react";
+import { Home, ClipboardList,Clipboard, User, LogOut, Menu, X, Key } from "lucide-react";
 import { logout as serviceLogout } from "../../_services/auth";
 import ProfileModal from "../ProfileModal";
 import ChangePasswordModal from "../ChangePasswordModal";
@@ -63,7 +63,7 @@ export default function GuruLayout({ children }) {
   const menu = [
     { icon: Home, label: "Dashboard", to: "/guru" },
     { icon: ClipboardList, label: "Nilai", to: "/guru/nilai" },
-    { icon: ClipboardList, label: "Nilai Detail", to: "/guru/nilai-detail" },
+    { icon: Home, label: "Detail", to: "/guru/nilai-detail" },
   ];
 
   const handleLogout = useCallback(async () => {

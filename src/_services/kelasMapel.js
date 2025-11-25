@@ -77,6 +77,22 @@ export const detachMapelFromKelas = (kelasId, mapelId) => api.delete(`/admin/kel
 export const assignMapelsToKelas = (kelasId, mapelIds) => api.post(`/admin/kelas/${kelasId}/mapel`, { mapel_ids: mapelIds });
 export const copyMapelsFromKelas = (kelasId, sourceKelasId) => api.post(`/admin/kelas/${kelasId}/mapel/copy-from/${sourceKelasId}`);
 
+/**
+ * Ambil mapel per kelas (public)
+ * Endpoint: GET /kelas/{kelas_id}/mapel
+ */
+export const getMapelsByKelas = (kelasId) => {
+  return api.get(`/kelas/${kelasId}/mapel`);
+};
+
+/**
+ * Ambil mapel yang bisa dibuat struktur nilai
+ * Endpoint: GET /kelas/{kelas_id}/semester/{semester_id}/available-mapels
+ */
+export const getAvailableMapelForStruktur = (kelasId, semesterId) => {
+  return api.get(`/kelas/${kelasId}/semester/${semesterId}/available-mapels`);
+};
+
 export default {
   getKelasMapels,
   getAvailableMapelsForKelas,
@@ -86,4 +102,6 @@ export default {
   detachMapelFromKelas,
   assignMapelsToKelas,
   copyMapelsFromKelas,
+  getMapelsByKelas,
+  getAvailableMapelForStruktur,
 };
