@@ -1,65 +1,100 @@
-// src/components/nilai/NilaiDetailForm.jsx
+// src/components/NilaiDetailForm.jsx - FIXED WITH IMPROVED INPUT HANDLING
 import React, { useEffect, useState } from "react";
 import { X, Save, AlertCircle } from "lucide-react";
 
 export default function NilaiDetailForm({ open, onClose, row, struktur, onSave }) {
   const [values, setValues] = useState({});
   const [errors, setErrors] = useState({});
+  const [saving, setSaving] = useState(false); // ✅ Added to handle saving state
 
   useEffect(() => {
-    if (!row || !struktur) return;
+    if (!open || !row || !struktur) return;
 
     const initial = {};
 
+    // ✅ FIX: Handle array empty case - convert to object
+    let nilaiData = row.nilai_data;
+    if (Array.isArray(nilaiData)) {
+      nilaiData = {};
+    }
+
+  
     // Format BARU: lingkup_materi, aslim, asas
     if (struktur.struktur?.lingkup_materi) {
       struktur.struktur.lingkup_materi.forEach((lm) => {
         const lmKey = lm.lm_key;
-        initial[lmKey] = { ...(row.nilai_data?.[lmKey] ?? {}) };
+        
+        // Initialize LM object
+        if (!initial[lmKey]) {
+          initial[lmKey] = {};
+        }
 
-lm.formatif.forEach((fmt) => {
-  const existing = row.nilai_data?.[lmKey]?.[fmt.kolom_key];
-  initial[lmKey][fmt.kolom_key] = existing ?? "";
-});
+        // Fill formatif values - gunakan nilaiData yang sudah diproses
+        lm.formatif.forEach((fmt) => {
+          const existing = nilaiData[lmKey]?.[fmt.kolom_key];
+          initial[lmKey][fmt.kolom_key] = existing !== undefined && existing !== null ? String(existing) : ""; // ✅ Convert to string for input
+        });
       });
 
-      // ASLIM & ASAS di root
-      const aslimKey = struktur.struktur.aslim.kolom_key;
-      const asasKey = struktur.struktur.asas.kolom_key;
-      initial[aslimKey] = row.nilai_data?.[aslimKey] ?? "";
-initial[asasKey] = row.nilai_data?.[asasKey] ?? "";
-
-
+      // ASLIM & ASAS di root level - gunakan nilaiData yang sudah diproses
+      const aslimKey = struktur.struktur.aslim?.kolom_key;
+      const asasKey = struktur.struktur.asas?.kolom_key;
+      
+      if (aslimKey) {
+        const aslimValue = nilaiData[aslimKey];
+        initial[aslimKey] = aslimValue !== undefined && aslimValue !== null ? String(aslimValue) : "";
+      }
+      
+      if (asasKey) {
+        const asasValue = nilaiData[asasKey];
+        initial[asasKey] = asasValue !== undefined && asasValue !== null ? String(asasValue) : "";
+      }
     }
     
     setValues(initial);
-     console.log("🔥 INITIAL VALUES:", initial); // <--- TAMBAHKAN INI
     setErrors({});
-  }, [row, struktur]);
+  }, [open, row, struktur]);
 
   if (!open || !row) return null;
 
-  const onChange = (key, value) => {
-    const v = value === "" ? "" : Number(value);
+const onChange = (key, value) => {
+  // allow empty or numbers with up to 2 decimals
+  const regex = /^\d*(\.\d{0,2})?$/;
+  if (value !== "" && !regex.test(value)) return;
 
-    
-    // Jika key adalah nested (lm.kolom), parse dulu
-    if (key.includes('.')) {
-      const [lmKey, kolomKey] = key.split('.');
-      setValues(p => ({
-        ...p,
-        [lmKey]: {
-          ...(p[lmKey] || {}),
-          [kolomKey]: v,
-        },
-      }));
-    } else {
-      // Root level (ASLIM/ASAS)
-      setValues(p => ({ ...p, [key]: v }));
+  // cap to 100
+  const numValue = parseFloat(value);
+  const cappedValue = !isNaN(numValue) && numValue > 100 ? "100" : value;
+
+  setValues(prev => {
+    // deep clone prev to ensure React sees a new reference
+    // structuredClone is best if supported, fallback to JSON for older envs
+    let newValues;
+    try {
+      newValues = typeof structuredClone === "function" ? structuredClone(prev) : JSON.parse(JSON.stringify(prev));
+    } catch (err) {
+      console.log("⚠️ Failed to deep clone prev:", err);
+      newValues = { ...prev };
     }
-    
-    setErrors(p => ({ ...p, [key]: null }));
-  };
+
+    if (key.includes(".")) {
+      // split ONLY on first dot so kolomKey can contain dots like '1.1'
+      const firstDot = key.indexOf(".");
+      const lmKey = key.slice(0, firstDot);
+      const kolomKey = key.slice(firstDot + 1); // everything after first dot
+
+      if (!newValues[lmKey]) newValues[lmKey] = {};
+      newValues[lmKey][kolomKey] = cappedValue;
+    } else {
+      newValues[key] = cappedValue;
+    }
+
+    return newValues;
+  });
+
+  setErrors(prev => ({ ...prev, [key]: null }));
+};
+
 
   const validate = () => {
     const e = {};
@@ -68,10 +103,11 @@ initial[asasKey] = row.nilai_data?.[asasKey] ?? "";
       struktur.struktur.lingkup_materi.forEach((lm) => {
         lm.formatif.forEach((fmt) => {
           const key = `${lm.lm_key}.${fmt.kolom_key}`;
-          const val = values[lm.lm_key]?.[fmt.kolom_key];
+          const val = values[lm.lm_key]?.[fmt.kolom_key] || "";
           
-          if (val !== "" && val !== null && val !== undefined) {
-            if (isNaN(val) || val < 0 || val > 100) {
+          if (val !== "") {
+            const numVal = parseFloat(val);
+            if (isNaN(numVal) || numVal < 0 || numVal > 100) {
               e[key] = "Nilai harus 0-100";
             }
           }
@@ -79,13 +115,14 @@ initial[asasKey] = row.nilai_data?.[asasKey] ?? "";
       });
 
       // Validate ASLIM & ASAS
-      const aslimKey = struktur.struktur.aslim.kolom_key;
-      const asasKey = struktur.struktur.asas.kolom_key;
+      const aslimKey = struktur.struktur.aslim?.kolom_key;
+      const asasKey = struktur.struktur.asas?.kolom_key;
       
-      [aslimKey, asasKey].forEach(key => {
-        const val = values[key];
-        if (val !== "" && val !== null && val !== undefined) {
-          if (isNaN(val) || val < 0 || val > 100) {
+      [aslimKey, asasKey].filter(Boolean).forEach(key => {
+        const val = values[key] || "";
+        if (val !== "") {
+          const numVal = parseFloat(val);
+          if (isNaN(numVal) || numVal < 0 || numVal > 100) {
             e[key] = "Nilai harus 0-100";
           }
         }
@@ -96,27 +133,57 @@ initial[asasKey] = row.nilai_data?.[asasKey] ?? "";
     return Object.keys(e).length === 0;
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     if (!validate()) return;
-    
-    // Transform values ke format yang dibutuhkan backend
+
+    setSaving(true); // ✅ Disable inputs during save
+
     const nilaiData = {};
-    
+
+    // ============================
+    // 1. LINGKUP MATERI (Nested LM)
+    // ============================
     if (struktur.struktur?.lingkup_materi) {
       struktur.struktur.lingkup_materi.forEach((lm) => {
-        nilaiData[lm.lm_key] = values[lm.lm_key] || {};
+        nilaiData[lm.lm_key] = {};
+
+        lm.formatif.forEach((fmt) => {
+          const val = values[lm.lm_key]?.[fmt.kolom_key] || "";
+          nilaiData[lm.lm_key][fmt.kolom_key] = val !== "" ? parseFloat(val) : null;
+        });
       });
-
-      // Add ASLIM & ASAS
-      const aslimKey = struktur.struktur.aslim.kolom_key;
-      const asasKey = struktur.struktur.asas.kolom_key;
-      nilaiData[aslimKey] = values[aslimKey] ?? null;
-      nilaiData[asasKey] = values[asasKey] ?? null;
-
     }
-    
-    onSave(row.siswa_id, nilaiData);
+
+    // ============================
+    // 2. ASLIM (UTS) ROOT LEVEL
+    // ============================
+    const aslimKey = struktur.struktur?.aslim?.kolom_key;
+    if (aslimKey) {
+      const val = values[aslimKey] || "";
+      nilaiData[aslimKey] = val !== "" ? parseFloat(val) : null;
+    }
+
+    // ============================
+    // 3. ASAS (UAS) ROOT LEVEL
+    // ============================
+    const asasKey = struktur.struktur?.asas?.kolom_key;
+    if (asasKey) {
+      const val = values[asasKey] || "";
+      nilaiData[asasKey] = val !== "" ? parseFloat(val) : null;
+    }
+
+    try {
+      await onSave({
+        siswa_id: row.siswa_id,
+        nilai_data: nilaiData,
+      });
+      onClose(); // ✅ Close form on success
+    } catch (err) {
+      console.error("Save error:", err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -161,21 +228,20 @@ initial[asasKey] = row.nilai_data?.[asasKey] ?? "";
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {lm.formatif.map((fmt) => {
                       const key = `${lm.lm_key}.${fmt.kolom_key}`;
-                      const val = values[lm.lm_key]?.[fmt.kolom_key];
+                      const val = values[lm.lm_key]?.[fmt.kolom_key] || "";
                       
                       return (
-                        <div key={key}>
+                        <div key={fmt.kolom_key}>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             {fmt.kolom_label}
                           </label>
                           <input
-                            type="number"
-                            inputMode="numeric"
-                            min={0}
-                            max={100}
-                            value={val ?? ""}
+                            type="text" // ✅ Changed to text for better control, no 'e' issue
+                            inputMode="decimal"
+                            value={val}
                             onChange={(e) => onChange(key, e.target.value)}
-                            className={`w-full border rounded-lg px-3 py-2 text-base focus:ring-2 focus:ring-blue-500 ${
+                            disabled={saving} // ✅ Disable during save
+                            className={`w-full border rounded-lg px-3 py-2 text-base focus:ring-2 focus:ring-blue-500 focus:outline-none ${
                               errors[key] ? "border-red-500" : "border-gray-300"
                             }`}
                             placeholder="0-100"
@@ -206,13 +272,12 @@ initial[asasKey] = row.nilai_data?.[asasKey] ?? "";
                         {struktur.struktur.aslim.kolom_label} (UTS)
                       </label>
                       <input
-                        type="number"
-                        inputMode="numeric"
-                        min={0}
-                        max={100}
-                        value={values[struktur.struktur.aslim.kolom_key] ?? ""}
+                        type="text" // ✅ Changed to text
+                        inputMode="decimal"
+                        value={values[struktur.struktur.aslim.kolom_key] || ""}
                         onChange={(e) => onChange(struktur.struktur.aslim.kolom_key, e.target.value)}
-                        className={`w-full border rounded-lg px-3 py-2 text-base focus:ring-2 focus:ring-blue-500 ${
+                        disabled={saving}
+                        className={`w-full border rounded-lg px-3 py-2 text-base focus:ring-2 focus:ring-blue-500 focus:outline-none ${
                           errors[struktur.struktur.aslim.kolom_key] ? "border-red-500" : "border-gray-300"
                         }`}
                         placeholder="0-100"
@@ -231,13 +296,12 @@ initial[asasKey] = row.nilai_data?.[asasKey] ?? "";
                         {struktur.struktur.asas.kolom_label} (UAS)
                       </label>
                       <input
-                        type="number"
-                        inputMode="numeric"
-                        min={0}
-                        max={100}
-                        value={values[struktur.struktur.asas.kolom_key] ?? ""}
+                        type="text" // ✅ Changed to text
+                        inputMode="decimal"
+                        value={values[struktur.struktur.asas.kolom_key] || ""}
                         onChange={(e) => onChange(struktur.struktur.asas.kolom_key, e.target.value)}
-                        className={`w-full border rounded-lg px-3 py-2 text-base focus:ring-2 focus:ring-blue-500 ${
+                        disabled={saving}
+                        className={`w-full border rounded-lg px-3 py-2 text-base focus:ring-2 focus:ring-blue-500 focus:outline-none ${
                           errors[struktur.struktur.asas.kolom_key] ? "border-red-500" : "border-gray-300"
                         }`}
                         placeholder="0-100"
@@ -270,16 +334,18 @@ initial[asasKey] = row.nilai_data?.[asasKey] ?? "";
               <button
                 type="button"
                 onClick={onClose}
+                disabled={saving}
                 className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium"
               >
                 Batal
               </button>
               <button
                 type="submit"
-                className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+                disabled={saving}
+                className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium disabled:opacity-50"
               >
                 <Save className="w-4 h-4" />
-                Simpan
+                {saving ? "Menyimpan..." : "Simpan"}
               </button>
             </div>
           </form>

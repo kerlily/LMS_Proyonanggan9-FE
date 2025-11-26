@@ -42,6 +42,8 @@ import DashboardLog from "./pages/admin/log/DashboardLog";
 import NilaiDetailDashboard from "./pages/guru/hitung_nilai/NilaiDetailDashboard";
 import StrukturNilai from "./pages/guru/hitung_nilai/StrukturNilai";
 
+import TestNilaiForm from "./test/TestNilaiForm/TestNilaiForm";
+
 
 export default function App() {
   const location = useLocation();
@@ -333,6 +335,15 @@ export default function App() {
               element={
                 <RoleProtectedRoute allowed={["guru"]}>
                   <StrukturNilai />
+                </RoleProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/test"
+              element={
+                <RoleProtectedRoute allowed={["guru"]}>
+                  <TestNilaiForm />
                 </RoleProtectedRoute>
               }
             />

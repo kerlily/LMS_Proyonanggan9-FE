@@ -1,4 +1,4 @@
-// src/pages/guru/hitung_nilai/NilaiDetailDashboard.jsx
+// src/pages/guru/hitung_nilai/NilaiDetailDashboard.jsx - DEBUG VERSION
 import React, { useEffect, useState } from "react";
 import { 
   CheckCircle, XCircle, Calculator, Save, RefreshCw, 
@@ -17,7 +17,7 @@ import {
   getProgress 
 } from "../../../_services/nilaiDetail";
 import api from "../../../_api";
-// eslint-disable-next-line no-unused-vars
+
 const StatCard = ({ icon: Icon, title, value, subtitle, color = "blue" }) => (
   <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
     <div className="flex items-start justify-between">
@@ -77,10 +77,12 @@ export default function NilaiDetailDashboard() {
       
       const resYear = await api.get("/tahun-ajaran/active");
       const yearData = resYear.data?.data || resYear.data;
+      console.log("📅 Tahun Ajaran:", yearData);
       setTahunAjaran(yearData);
       
       const resWali = await showByGuru(yearData?.id);
       const data = resWali.data || [];
+      console.log("👨‍🏫 Wali Kelas Assignments:", data);
       setAssignments(data);
       
       if (data.length === 1) {
@@ -91,6 +93,7 @@ export default function NilaiDetailDashboard() {
       if (yearData?.id) {
         const resSem = await getSemesterByTahunAjaran(yearData.id);
         const semList = resSem.data?.data ?? resSem.data ?? [];
+        console.log("📚 Semesters:", semList);
         setSemesters(Array.isArray(semList) ? semList : []);
         
         const activeSem = semList.find(s => s.is_active);
@@ -99,7 +102,7 @@ export default function NilaiDetailDashboard() {
         }
       }
     } catch (err) {
-      console.error("fetchInitialData error:", err);
+      console.error("❌ fetchInitialData error:", err);
       setError(err?.response?.data?.message || "Gagal memuat data awal");
     } finally {
       setLoading(false);
@@ -108,6 +111,7 @@ export default function NilaiDetailDashboard() {
 
   const onSelectAssignment = (id) => {
     const a = assignments.find((x) => x.id === Number(id));
+    console.log("🎯 Selected Assignment:", a);
     setSelectedAssignment(a || null);
     setKelasId(a ? a.kelas_id : null);
     resetData();
@@ -115,6 +119,7 @@ export default function NilaiDetailDashboard() {
 
   const onSelectSemester = (id) => {
     const sem = semesters.find(s => s.id === Number(id));
+    console.log("📖 Selected Semester:", sem);
     setSelectedSemester(sem);
     resetData();
   };
@@ -129,31 +134,38 @@ export default function NilaiDetailDashboard() {
     setError(null);
   };
 
-  const fetchStruktur = async () => {
-    if (!kelasId || !selectedSemester) return;
-    
-    try {
-      setLoading(true);
-      setError(null);
-      const res = await getStrukturNilai(kelasId, { semester_id: selectedSemester.id });
-      const list = Array.isArray(res) ? res : [];
-      setStrukturList(list);
-      
-      if (list.length === 1) {
-        setSelectedStruktur(list[0]);
-        fetchNilaiDetail(list[0].id);
-      }
-    } catch (err) {
-      console.error("fetchStruktur error:", err);
-      setError("Gagal mengambil struktur nilai. Pastikan struktur sudah dibuat.");
-      setStrukturList([]);
-    } finally {
-      setLoading(false);
+const fetchStruktur = async () => {
+  if (!kelasId || !selectedSemester) return;
+
+  try {
+    setLoading(true);
+    setError(null);
+    console.log(`🔍 Fetching struktur for kelas: ${kelasId}, semester: ${selectedSemester.id}`);
+
+    const res = await getStrukturNilai(kelasId, { semester_id: selectedSemester.id });
+    // res may be axios response or already data; handle both
+    const payload = res?.data ?? res;
+    // payload may be { data: [ ... ] } or array directly
+    const list = Array.isArray(payload) ? payload : (payload?.data ?? payload ?? []);
+    console.log("📋 Struktur List:", list);
+    setStrukturList(Array.isArray(list) ? list : []);
+
+    if (Array.isArray(list) && list.length === 1) {
+      setSelectedStruktur(list[0]);
+      fetchNilaiDetail(list[0].id);
     }
-  };
+  } catch (err) {
+    console.error("❌ fetchStruktur error:", err);
+    setError("Gagal mengambil struktur nilai. Pastikan struktur sudah dibuat.");
+    setStrukturList([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const onSelectStruktur = (id) => {
     const s = strukturList.find((x) => String(x.id) === String(id));
+    console.log("📝 Selected Struktur:", s);
     setSelectedStruktur(s || null);
     setRows([]);
     setEdited({});
@@ -165,78 +177,177 @@ export default function NilaiDetailDashboard() {
     }
   };
 
-  const fetchNilaiDetail = async (strukturId) => {
-    if (!kelasId || !strukturId) return;
-    
-    try {
-      setLoading(true);
-      setError(null);
-      const res = await getNilaiDetail(kelasId, strukturId);
-      const data = res.data || [];
-      setRows(data);
-      setEdited({});
-    } catch (err) {
-      console.error("fetchNilaiDetail error:", err);
-      setError("Gagal mengambil data nilai detail");
-      setRows([]);
-    } finally {
-      setLoading(false);
+ const fetchNilaiDetail = async (strukturId) => {
+  if (!kelasId || !strukturId) return;
+
+  try {
+    setLoading(true);
+    setError(null);
+    console.log(`📊 Fetching nilai detail for struktur: ${strukturId}`);
+
+    const res = await getNilaiDetail(kelasId, strukturId);
+    // res may be axios response: res.data === { struktur: {...}, data: [...] }
+    const payload = res?.data ?? res;
+
+    console.log("📊 Raw Response Payload:", payload);
+
+    // Extract struktur from payload if present (keamanan: keep server-provided struktur)
+    if (payload?.struktur) {
+      // some responses wrap struktur inside payload.struktur
+      setSelectedStruktur(payload.struktur);
     }
-  };
+
+    // Extract rows array
+    const rowsArray = Array.isArray(payload?.data) ? payload.data
+                      : Array.isArray(payload) ? payload
+                      : [];
+
+    // Normalize nilai_data per row:
+    const normalizeRow = (r) => {
+      const nd = r?.nilai_data;
+      let nilaiObj = {};
+      if (nd == null) {
+        nilaiObj = {};
+      } else if (typeof nd === "string") {
+        try {
+          nilaiObj = JSON.parse(nd);
+        } catch (e) {
+          console.warn("⚠️ Failed parse nilai_data string, fallback to {} for siswa:", r.siswa_id, e);
+          nilaiObj = {};
+        }
+      } else if (Array.isArray(nd)) {
+        // fallback if backend returns empty array
+        nilaiObj = {};
+      } else if (typeof nd === "object") {
+        nilaiObj = nd;
+      } else {
+        nilaiObj = {};
+      }
+
+      return { ...r, nilai_data: nilaiObj };
+    };
+
+    const finalRows = rowsArray.map(normalizeRow);
+
+    console.log("📊 Nilai Detail Rows (normalized):", finalRows);
+    console.log("📊 Sample Row:", finalRows[0]);
+
+    setRows(finalRows);
+    setEdited({});
+  } catch (err) {
+    console.error("❌ fetchNilaiDetail error:", err);
+    setError("Gagal mengambil data nilai detail");
+    setRows([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const fetchProgress = async () => {
     if (!kelasId || !selectedStruktur) return;
     
     try {
       const res = await getProgress(kelasId, selectedStruktur.id);
+      console.log("📈 Progress:", res);
       setProgress(res);
     } catch (err) {
-      console.error("fetchProgress error:", err);
+      console.error("❌ fetchProgress error:", err);
     }
   };
 
   const openForm = (row) => {
+    console.log("🖊️ Opening form for row:", row);
+    console.log("🖊️ Selected Struktur:", selectedStruktur);
     setOpenRow(row);
   };
 
-  const handleSaveRow = (siswaId, nilaiData) => {
-    setEdited((p) => ({ ...p, [siswaId]: nilaiData }));
+  const handleSaveRow = async (saveData) => {
+  console.log("💾 Saving row:", saveData);
+  
+  try {
+    // Update UI langsung
+    setEdited((p) => ({ ...p, [saveData.siswa_id]: saveData.nilai_data }));
     setRows((prev) =>
-      prev.map((r) => (r.siswa_id === siswaId ? { ...r, nilai_data: nilaiData } : r))
+      prev.map((r) => 
+        r.siswa_id === saveData.siswa_id 
+          ? { ...r, nilai_data: saveData.nilai_data } 
+          : r
+      )
     );
-    setOpenRow(null);
-  };
-
-  const handleSaveAll = async () => {
-    if (!selectedStruktur || !kelasId) {
-      alert("Pilih kelas dan struktur terlebih dahulu.");
-      return;
-    }
     
-    const payloadArray = rows.map((r) => ({
-      siswa_id: r.siswa_id,
-      nilai_data: typeof (edited[r.siswa_id] || r.nilai_data) === "object"
-  && !Array.isArray(edited[r.siswa_id] || r.nilai_data)
-  ? (edited[r.siswa_id] || r.nilai_data)
-  : {},
+    // ✅ OPTIONAL: Juga save ke backend via bulk (jika ingin tetap pakai bulk)
+    const payload = {
+      data: [{
+        siswa_id: saveData.siswa_id,
+        nilai_data: saveData.nilai_data
+      }]
+    };
+    
+    console.log("📤 Also saving via bulk:", payload);
+    await postNilaiDetailBulk(kelasId, selectedStruktur.id, payload);
+    
+    setOpenRow(null);
+    fetchProgress(); // Refresh progress
+  } catch (error) {
+    console.error("❌ Error in handleSaveRow:", error);
+    alert("Gagal menyimpan: " + (error.response?.data?.message || error.message));
+  }
+};
 
-    }));
+const handleSaveAll = async () => {
+  if (!selectedStruktur || !kelasId) {
+    alert("Pilih kelas dan struktur terlebih dahulu.");
+    return;
+  }
 
+  const safeParse = (v) => {
+    if (!v) return {};
+    if (typeof v === "object") return v;
     try {
-      setSaving(true);
-      setError(null);
-      await postNilaiDetailBulk(kelasId, selectedStruktur.id, { data: payloadArray });
-      alert("Berhasil menyimpan nilai.");
-      setEdited({});
-      fetchNilaiDetail(selectedStruktur.id);
-      fetchProgress();
-    } catch (err) {
-      console.error("saveBulkNilai error:", err);
-      setError(err?.response?.data?.message || "Gagal menyimpan nilai");
-    } finally {
-      setSaving(false);
+      return JSON.parse(v);
+    } catch {
+      return {};
     }
   };
+
+  const payloadArray = rows.map((r) => {
+    const edit = edited[Number(r.siswa_id)];
+    const nilaiData = edit ? edit : safeParse(r.nilai_data);
+
+    console.log(`💾 Final nilai untuk siswa ${r.siswa_id}:`, nilaiData);
+
+    return {
+      siswa_id: Number(r.siswa_id),
+      nilai_data: nilaiData,
+    };
+  });
+
+  console.log("💾 Final BULK payload:", payloadArray);
+
+  try {
+    setSaving(true);
+    setError(null);
+
+    const res = await postNilaiDetailBulk(
+      kelasId,
+      selectedStruktur.id,
+      { data: payloadArray }
+    );
+
+    console.log("✅ Save Response:", res);
+    alert("Berhasil menyimpan nilai.");
+
+    setEdited({});
+    fetchNilaiDetail(selectedStruktur.id);
+    fetchProgress();
+  } catch (err) {
+    console.error("❌ saveBulkNilai error:", err);
+    setError(err?.response?.data?.message || "Gagal menyimpan nilai");
+  } finally {
+    setSaving(false);
+  }
+};
+
 
   const handleGenerate = async () => {
     if (!selectedStruktur || !kelasId) {
@@ -253,12 +364,13 @@ export default function NilaiDetailDashboard() {
       setError(null);
       setGenerateSummary(null);
       const res = await generateNilaiAkhir(kelasId, selectedStruktur.id);
+      console.log("🎯 Generate Response:", res);
       setGenerateSummary(res.summary || null);
       alert("Generate selesai! Lihat ringkasan di bawah.");
       fetchNilaiDetail(selectedStruktur.id);
       fetchProgress();
     } catch (err) {
-      console.error("generateNilaiAkhir error:", err);
+      console.error("❌ generateNilaiAkhir error:", err);
       setError(err?.response?.data?.message || "Gagal generate nilai akhir");
     } finally {
       setGenerating(false);
@@ -303,20 +415,19 @@ export default function NilaiDetailDashboard() {
           </div>
         )}
 
-              <div className="mt-4 flex">
-                <Link
-                  to="/guru/struktur-nilai"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                >
-                  <Plus className="w-4 h-4" />
-                  Buat Struk Nilai
-                </Link>
-              </div>
+        <div className="mt-4 flex">
+          <Link
+            to="/guru/struktur-nilai"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          >
+            <Plus className="w-4 h-4" />
+            Buat Struk Nilai
+          </Link>
+        </div>
+
         {/* Filters */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Pilih Kelas
@@ -453,7 +564,6 @@ export default function NilaiDetailDashboard() {
                   </div>
                 )}
               </div>
-
 
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
