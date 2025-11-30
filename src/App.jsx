@@ -42,7 +42,15 @@ import DashboardLog from "./pages/admin/log/DashboardLog";
 import NilaiDetailDashboard from "./pages/guru/hitung_nilai/NilaiDetailDashboard";
 import StrukturNilai from "./pages/guru/hitung_nilai/StrukturNilai";
 
+import NilaiSikapAbsensiDashboard from "./pages/guru/hitung_nilai/NilaiSikapAbsensiDashboard";
+
 import TestNilaiForm from "./test/TestNilaiForm/TestNilaiForm";
+import BeritaDashboard from "./pages/guru/berita/BeritaDashboard";
+import GalleryDashboard from "./pages/guru/berita/GalleryDashboard";
+import BeritaDashboardAdmin from "./pages/admin/Berita/BeritaDashboard";
+import GalleryDashboardAdmin from "./pages/admin/Berita/GalleryDashboardAdmin";
+
+import JadwalDashboard from "./pages/guru/jadwal/JadwalDashboard";
 
 
 export default function App() {
@@ -301,6 +309,22 @@ export default function App() {
                 </RoleProtectedRoute>
               }
             />
+             <Route
+              path="/admin/berita"
+              element={
+                <RoleProtectedRoute allowed={["admin"]}>
+                  <BeritaDashboardAdmin />
+                </RoleProtectedRoute>
+              }
+            />
+             <Route
+              path="/admin/gallery"
+              element={
+                <RoleProtectedRoute allowed={["admin"]}>
+                  <GalleryDashboardAdmin />
+                </RoleProtectedRoute>
+              }
+            />
 
             {/* Guru protected */}
             <Route
@@ -335,6 +359,42 @@ export default function App() {
               element={
                 <RoleProtectedRoute allowed={["guru"]}>
                   <StrukturNilai />
+                </RoleProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/guru/nilai-sikap"
+              element={
+                <RoleProtectedRoute allowed={["guru"]}>
+                  <NilaiSikapAbsensiDashboard />
+                </RoleProtectedRoute>
+              }
+            />
+
+             <Route
+              path="/guru/jadwal"
+              element={
+                <RoleProtectedRoute allowed={["guru"]}>
+                  <JadwalDashboard />
+                </RoleProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/guru/berita"
+              element={
+                <RoleProtectedRoute allowed={["guru"]}>
+                  <BeritaDashboard />
+                </RoleProtectedRoute>
+              }
+            />
+
+             <Route
+              path="/guru/gallery"
+              element={
+                <RoleProtectedRoute allowed={["guru"]}>
+                  <GalleryDashboard />
                 </RoleProtectedRoute>
               }
             />

@@ -6,17 +6,8 @@ import TahunAjaran from "../../../components/TahunAjaran";
 import api from "../../../_api";
 import AdminLayout from "../../../components/layout/AdminLayout";
 
-/**
- * GuruList (updated)
- * - shows bubble list
- * - header buttons: /guru/create and /guru/wali-kelas/assign
- * - per-item: Edit, Reset pw (link to edit), Delete (confirm)
- * - shows list of kelas where guru is wali (under name)
- */
-
 function Avatar({ guru, size = 56 }) {
   const getAvatarUrl = () => {
-    // check common fields
     const candidates = [
       guru.photo, guru.foto, guru.photo_url, guru.foto_url,
       guru.avatar, guru.user?.photo, guru.user?.avatar
@@ -28,19 +19,12 @@ function Avatar({ guru, size = 56 }) {
     const s = String(first);
     if (s.startsWith("http://") || s.startsWith("https://")) return s;
 
-    // If relative path (no protocol) — try common storage location:
-    // if API base is http://127.0.0.1:8000/api -> prefix with /storage
-    // derive base origin from api.defaults.baseURL if available
     try {
       const base = (api && api.defaults && api.defaults.baseURL) ? api.defaults.baseURL : "";
-      // base maybe "http://127.0.0.1:8000/api" -> strip trailing "/api"
       const origin = base.replace(/\/api\/?$/, "");
-      // if path already starts with "/storage" or "/"
       if (s.startsWith("/")) return origin + s;
-      // else assume stored in storage folder
       return `${origin}/storage/${s}`;
     } catch (e) {
-      // fallback: return as-is
       console.error(e);
       return s;
     }
@@ -55,7 +39,6 @@ function Avatar({ guru, size = 56 }) {
         className="rounded-full object-cover"
         style={{ width: size, height: size }}
         onError={(e) => {
-          // hide broken image (so initials show)
           e.currentTarget.style.display = "none";
         }}
       />
@@ -81,7 +64,7 @@ function Avatar({ guru, size = 56 }) {
 export default function GuruList() {
   const [gurus, setGurus] = useState([]);
   const [kelas, setKelas] = useState([]);
-  const [waliMap, setWaliMap] = useState({}); // guruId => [kelas objects]
+  const [waliMap, setWaliMap] = useState({}); // guruId => [assignment objects with kelas info]
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
 
@@ -100,7 +83,6 @@ export default function GuruList() {
         let gItems = [];
         if (gRes.status === "fulfilled") {
           const payload = gRes.value?.data ?? [];
-          // payload could be {data: [...]} (paginated) or array
           gItems = Array.isArray(payload.data) ? payload.data : (Array.isArray(payload) ? payload : (payload.data ?? []));
         }
 
@@ -115,24 +97,33 @@ export default function GuruList() {
         let wali = [];
         if (wRes.status === "fulfilled") {
           const wp = wRes.value?.data ?? [];
-          // could be array or paginated; normalize to array
           wali = Array.isArray(wp) ? wp : (wp.data ?? wp);
-          // each item likely contains guru_id, kelas_id and kelas object
         }
 
         if (!mounted) return;
         setGurus(gItems);
         setKelas(kItems);
 
-        // build map: guruId -> array of kelas objects or names
+        // FIX: Build map dengan assignment id untuk unique key
         const map = {};
         (wali || []).forEach((w) => {
           const gid = w.guru_id ?? w.user_id ?? null;
-          const kelasObj = w.kelas ?? (kItems.find(k => String(k.id) === String(w.kelas_id)) ?? { id: w.kelas_id, nama: String(w.kelas_id) });
           if (!gid) return;
+          
+            if (!w.tahun_ajaran?.is_active) return;
+
           if (!map[gid]) map[gid] = [];
-          map[gid].push(kelasObj);
+          
+          // Simpan full assignment object dengan kelas info
+            map[gid].push({
+              assignment_id: w.id,
+              kelas_id: w.kelas_id,
+              kelas_nama: w.kelas?.nama ?? `Kelas ${w.kelas_id}`,
+              tahun_ajaran: w.tahun_ajaran?.nama ?? '-',
+              is_active: w.tahun_ajaran?.is_active ?? false,
+          });
         });
+        
         setWaliMap(map);
       } catch (e) {
         console.error(e);
@@ -145,66 +136,76 @@ export default function GuruList() {
     return () => { mounted = false; };
   }, []);
 
-
-
   return (
     <AdminLayout>
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Daftar Guru</h1>
-          <p className="text-sm text-gray-600">Kelola guru dan penugasan wali kelas.</p>
+      <div className="p-6 max-w-4xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Daftar Guru</h1>
+            <p className="text-sm text-gray-600">Kelola guru dan penugasan wali kelas.</p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <TahunAjaran />
+            <Link to="/admin/guru/create" className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+              Create Guru
+            </Link>
+            <Link to="/admin/guru/wali-kelas/assign" className="px-3 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
+              Assign Wali
+            </Link>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <TahunAjaran />
-          <Link to="/admin/guru/create" className="px-3 py-2 bg-blue-600 text-white rounded">Create Guru</Link>
-          <Link to="/admin/guru/wali-kelas/assign" className="px-3 py-2 bg-indigo-600 text-white rounded">Assign Wali</Link>
-        </div>
-      </div>
+        {err && <div className="bg-red-50 text-red-700 px-4 py-2 rounded">{err}</div>}
 
-      {err && <div className="bg-red-50 text-red-700 px-4 py-2 rounded">{err}</div>}
+        <div className="space-y-3">
+          {loading ? (
+            <div className="p-6 text-center">Memuat guru...</div>
+          ) : gurus.length === 0 ? (
+            <div className="p-6 text-center text-gray-500">Belum ada guru.</div>
+          ) : (
+            gurus.map((g) => (
+              <div key={g.id} className="flex items-center justify-between bg-white rounded shadow-sm p-4">
+                <div className="flex items-center gap-4">
+                  <div style={{ width: 56, height: 56 }}>
+                    <Avatar guru={g} size={56} />
+                  </div>
 
-      <div className="space-y-3">
-        {loading ? (
-          <div className="p-6 text-center">Memuat guru...</div>
-        ) : gurus.length === 0 ? (
-          <div className="p-6 text-center text-gray-500">Belum ada guru.</div>
-        ) : (
-          gurus.map((g) => (
-            <div key={g.id} className="flex items-center justify-between bg-white rounded shadow-sm p-4">
-              <div className="flex items-center gap-4">
-                <div style={{ width: 56, height: 56 }}>
-                  <Avatar guru={g} size={56} />
-                </div>
+                  <div>
+                    <div className="font-semibold">{g.nama ?? g.name ?? g.user?.name ?? "-"}</div>
+                    <div className="text-sm text-gray-500">{g.email ?? g.user?.email ?? "-"}</div>
 
-                <div>
-                  <div className="font-semibold">{g.nama ?? g.name ?? g.user?.name ?? "-"}</div>
-                  <div className="text-sm text-gray-500">{g.email ?? g.user?.email ?? "-"}</div>
-
-                  {/* list kelas where this guru is wali */}
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {(waliMap[g.id] || []).length === 0 ? (
-                      <div className="text-xs text-gray-400">Belum menjadi wali kelas</div>
-                    ) : (
-                      (waliMap[g.id] || []).map((k) => (
-                        <div key={k.id} className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">{k.nama}</div>
-                      ))
-                    )}
+                 {/* list kelas - hanya tahun ajaran aktif */}
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {(waliMap[g.id] || []).length === 0 ? (
+                        <div className="text-xs text-gray-400">Belum menjadi wali kelas</div>
+                      ) : (
+                        (waliMap[g.id] || []).map((assignment) => (
+                          <div 
+                            key={assignment.assignment_id} 
+                            className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded"
+                          >
+                            {assignment.kelas_nama}
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-center gap-2">
-                <Link to={`/admin/guru/edit/${g.id}`} className="px-3 py-2 rounded text-sm bg-blue-600 text-yellow-50">Edit</Link>  
+                <div className="flex items-center gap-2">
+                  <Link 
+                    to={`/admin/guru/edit/${g.id}`} 
+                    className="px-3 py-2 rounded text-sm bg-blue-600 text-white hover:bg-blue-700"
+                  >
+                    Edit
+                  </Link>  
+                </div>
               </div>
-            </div>
-          ))
-        )}
+            ))
+          )}
+        </div>
       </div>
-
-      
-    </div>
     </AdminLayout>
   );
 }

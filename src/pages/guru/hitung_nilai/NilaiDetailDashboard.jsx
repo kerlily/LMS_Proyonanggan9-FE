@@ -53,6 +53,7 @@ export default function NilaiDetailDashboard() {
   const [generating, setGenerating] = useState(false);
   const [generateSummary, setGenerateSummary] = useState(null);
   const [error, setError] = useState(null);
+  
 
   useEffect(() => {
     fetchInitialData();
@@ -415,13 +416,20 @@ const handleSaveAll = async () => {
           </div>
         )}
 
-        <div className="mt-4 flex">
+        <div className="mt-4 flex gap-3">
           <Link
             to="/guru/struktur-nilai"
             className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
           >
             <Plus className="w-4 h-4" />
-            Buat Struk Nilai
+            Buat Struktur Nilai
+          </Link>
+          <Link
+            to="/guru/nilai-sikap"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          >
+            <Plus className="w-4 h-4" />
+            Buat Nilai Sikap & Absensi
           </Link>
         </div>
 

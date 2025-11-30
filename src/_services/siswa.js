@@ -1,11 +1,6 @@
 // src/_services/siswa.js
 import api from "../_api";
 
-/**
- * loginSiswa
- * Mengirim payload { nama, kelas_id, password }
- * Menyimpan token + user sesuai konvensi project Anda (token, userInfo)
- */
 export const loginSiswa = async ({ nama, kelas_id, password }) => {
   try {
     const body = {
@@ -61,4 +56,6 @@ export const logoutSiswa = async () => {
 export const getKelas = () => api.get("/kelas");
 export const getSiswaByKelas = (kelasId) => api.get(`/kelas/${kelasId}/siswa`);
 export const getNilaiMe = () => api.get("/siswa/me/nilai");
+export const getKetidakhadiranMe = () => api.get("/siswa/me/ketidakhadiran");
+export const getNilaiSikapMe = () => api.get("/siswa/me/nilai-sikap");
 export const changePassword = (payload) => api.post("/siswa/me/password", payload);

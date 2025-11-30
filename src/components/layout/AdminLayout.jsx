@@ -13,6 +13,10 @@ import {
   Key,
   Logs,
   Calendar,
+  BookImage,
+  Newspaper,
+  ChevronDown,
+  Settings,
 } from "lucide-react";
 import { logout as serviceLogout } from "../../_services/auth";
 import ProfileModal from "../ProfileModal";
@@ -23,6 +27,8 @@ export default function AdminLayout({ children }) {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState(null);
 
   // Use ref to store user data to avoid triggering re-renders
   const [userState, setUserState] = useState(() => {
@@ -38,8 +44,32 @@ export default function AdminLayout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const updateInProgressRef = useRef(false);
+  const dropdownRef = useRef(null);
 
-  // Listen to storage changes - FIXED: Proper dependency handling
+  // Handle scroll effect for navbar
+  useEffect(() => {
+    const handleScroll = () => {
+      const isScrolled = window.scrollY > 10;
+      setScrolled(isScrolled);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Listen to storage changes
   useEffect(() => {
     const handleStorageChange = (e) => {
       console.log("Storage change detected:", e);
@@ -50,7 +80,6 @@ export default function AdminLayout({ children }) {
         const raw = localStorage.getItem("userInfo") || localStorage.getItem("user");
         const newUser = raw ? JSON.parse(raw) : null;
         
-        // Only update if actually different
         setUserState(prevUser => {
           const prevStr = JSON.stringify(prevUser);
           const newStr = JSON.stringify(newUser);
@@ -61,21 +90,50 @@ export default function AdminLayout({ children }) {
       } finally {
         updateInProgressRef.current = false;
       }
-      
     };
 
-    // For cross-tab changes
     window.addEventListener('storage', handleStorageChange);
-    // For same-tab changes
     window.addEventListener('userInfoUpdated', handleStorageChange);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('userInfoUpdated', handleStorageChange);
     };
-  }, []); // Empty deps - only setup once
+  }, []);
 
-  const menu = [
+  // Menu structure dengan dropdown untuk desktop
+  const menuItems = [
+    { icon: Home, label: "Overview", to: "/admin" },
+    { 
+      label: "Manajemen User", 
+      icon: Users,
+      items: [
+        { icon: Users, label: "Siswa", to: "/admin/siswa" },
+        { icon: GraduationCap, label: "Guru", to: "/admin/guru" },
+        { icon: User, label: "Admin", to: "/admin/admins" },
+      ]
+    },
+    { 
+      label: "Akademik", 
+      icon: BookOpen,
+      items: [
+        { icon: BookOpen, label: "Mapel", to: "/admin/mapel" },
+        { icon: Calendar, label: "Tahun Ajaran", to: "/admin/tahun-ajaran" },
+      ]
+    },
+    { 
+      label: "Konten", 
+      icon: Newspaper,
+      items: [
+        { icon: Newspaper, label: "Berita", to: "/admin/berita" },
+        { icon: BookImage, label: "Galeri", to: "/admin/gallery" },
+      ]
+    },
+    { icon: Logs, label: "Logs", to: "/admin/logs" },
+  ];
+
+  // Menu flat untuk mobile (tetap seperti sebelumnya)
+  const flatMenu = [
     { icon: Home, label: "Overview", to: "/admin" },
     { icon: Users, label: "Siswa", to: "/admin/siswa" },
     { icon: GraduationCap, label: "Guru", to: "/admin/guru" },
@@ -83,6 +141,8 @@ export default function AdminLayout({ children }) {
     { icon: BookOpen, label: "Mapel", to: "/admin/mapel" },
     { icon: Calendar, label: "Tahun Ajaran", to: "/admin/tahun-ajaran" },
     { icon: Logs, label: "Logs", to: "/admin/logs" },
+    { icon: BookImage, label: "Galeri", to: "/admin/gallery" },
+    { icon: Newspaper, label: "Berita", to: "/admin/berita" },
   ];
 
   const handleLogout = useCallback(async () => {
@@ -92,7 +152,6 @@ export default function AdminLayout({ children }) {
       console.warn("Logout service error:", err);
     }
     
-    // Clear all tokens
     localStorage.removeItem("token");
     localStorage.removeItem("access_token");
     localStorage.removeItem("userInfo");
@@ -106,6 +165,10 @@ export default function AdminLayout({ children }) {
   const isActive = (path) => {
     if (path === "/admin") return location.pathname === path;
     return location.pathname.startsWith(path);
+  };
+
+  const isDropdownActive = (items) => {
+    return items.some(item => isActive(item.to));
   };
 
   const openProfileModal = useCallback(() => {
@@ -131,116 +194,190 @@ export default function AdminLayout({ children }) {
         return prevStr !== newStr ? newUser : prevUser;
       });
       
-      // Dispatch event for other components
       window.dispatchEvent(new Event('userInfoUpdated'));
     } catch (e) {
       console.error("Error in handleProfileSaved:", e);
     }
   }, []);
 
-  // Memoize display values to prevent recalculation
+  const toggleDropdown = (dropdownName) => {
+    setOpenDropdown(openDropdown === dropdownName ? null : dropdownName);
+  };
+
   const displayName = userState?.nama ?? userState?.name ?? "Admin";
   const userInitial = displayName.charAt(0).toUpperCase();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-      <nav className="bg-white border-b sticky top-0 z-50 shadow-sm">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
+      <nav className={`sticky top-0 z-50 transition-all duration-300 ${
+        scrolled 
+          ? 'bg-indigo-900/95 backdrop-blur-xl border-b border-indigo-700 shadow-lg' 
+          : 'bg-indigo-900 backdrop-blur-lg border-b border-indigo-800'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">A</span>
+              <div className="relative">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 via-indigo-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/25">
+                  <span className="text-white font-bold text-lg">A</span>
+                </div>
+                <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 to-blue-600 rounded-xl blur opacity-20 group-hover:opacity-30 transition duration-1000"></div>
               </div>
               <div>
-                <h1 className="text-lg font-bold text-gray-900">Admin Panel</h1>
-                <p className="text-xs text-gray-500 hidden sm:block">Learning Management System</p>
+                <h1 className="text-lg font-bold text-white">Admin Panel</h1>
+                <p className="text-xs text-indigo-200 hidden sm:block">Learning Management System</p>
               </div>
             </div>
 
-            <div className="hidden md:flex items-center gap-4">
-              {menu.map((item) => {
+            {/* Desktop Navigation dengan Dropdown */}
+            <div className="hidden md:flex items-center gap-1" ref={dropdownRef}>
+              {menuItems.map((item) => {
                 const Icon = item.icon;
-                const active = isActive(item.to);
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      active
-                        ? "bg-indigo-50 text-indigo-700"
-                        : "text-gray-600 hover:text-indigo-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    {item.label}
-                  </Link>
-                );
+                
+                if (item.items) {
+                  // Dropdown menu item
+                  const isActiveDropdown = isDropdownActive(item.items);
+                  return (
+                    <div key={item.label} className="relative">
+                      <button
+                        onClick={() => toggleDropdown(item.label)}
+                        className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${
+                          isActiveDropdown
+                            ? "text-white bg-indigo-700/50 shadow-sm border border-indigo-600/50"
+                            : "text-indigo-100 hover:text-white hover:bg-indigo-700/30"
+                        }`}
+                      >
+                        <Icon className={`w-4 h-4 transition-transform duration-200 ${
+                          isActiveDropdown ? "scale-110" : "group-hover:scale-110"
+                        }`} />
+                        {item.label}
+                        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${
+                          openDropdown === item.label ? 'rotate-180' : ''
+                        }`} />
+                      </button>
+
+                      {openDropdown === item.label && (
+                        <div className="absolute top-full left-0 mt-2 w-56 bg-indigo-800/95 backdrop-blur-xl rounded-2xl shadow-xl border border-indigo-700 z-30 py-2">
+                          {item.items.map((subItem) => {
+                            const SubIcon = subItem.icon;
+                            const active = isActive(subItem.to);
+                            return (
+                              <Link
+                                key={subItem.to}
+                                to={subItem.to}
+                                onClick={() => setOpenDropdown(null)}
+                                className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-colors duration-150 ${
+                                  active
+                                    ? "text-white bg-indigo-700/50"
+                                    : "text-indigo-100 hover:bg-indigo-700/30 hover:text-white"
+                                }`}
+                              >
+                                <SubIcon className="w-4 h-4" />
+                                {subItem.label}
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                } else {
+                  // Regular menu item
+                  const active = isActive(item.to);
+                  return (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${
+                        active
+                          ? "text-white bg-indigo-700/50 shadow-sm border border-indigo-600/50"
+                          : "text-indigo-100 hover:text-white hover:bg-indigo-700/30"
+                      }`}
+                    >
+                      <Icon className={`w-4 h-4 transition-transform duration-200 ${
+                        active ? "scale-110" : "group-hover:scale-110"
+                      }`} />
+                      {item.label}
+                      {active && (
+                        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-white rounded-full"></div>
+                      )}
+                    </Link>
+                  );
+                }
               })}
             </div>
 
+            {/* Profile Section */}
             <div className="hidden md:block relative">
               <button
                 onClick={() => setProfileDropdownOpen((p) => !p)}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-indigo-700/50 transition-all duration-200 group border border-transparent hover:border-indigo-600/50"
                 aria-haspopup="true"
                 aria-expanded={profileDropdownOpen}
               >
-                <div className="w-9 h-9 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                <div className="w-9 h-9 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm ring-2 ring-indigo-400 ring-offset-2 ring-offset-indigo-900">
                   {userInitial}
                 </div>
                 <div className="text-left">
-                  <div className="text-sm font-medium text-gray-900">{displayName}</div>
-                  <div className="text-xs text-gray-500">Administrator</div>
+                  <div className="text-sm font-semibold text-white">{displayName}</div>
+                  <div className="text-xs text-indigo-200 flex items-center gap-1">Administrator</div>
                 </div>
               </button>
 
               {profileDropdownOpen && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setProfileDropdownOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border z-20 py-1">
-                    <button
-                      onClick={(e) => { e.preventDefault(); openProfileModal(); }}
-                      className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                    >
-                      <User className="w-4 h-4" />
-                      Edit Profil
-                    </button>
-
-                    <button
-                      onClick={(e) => { e.preventDefault(); openPasswordModal(); }}
-                      className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                    >
-                      <Key className="w-4 h-4" />
-                      Ubah Password
-                    </button>
-
-                    <hr className="my-1" />
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Logout
-                    </button>
+                  <div className="absolute right-0 mt-2 w-64 bg-indigo-800/95 backdrop-blur-xl rounded-2xl shadow-xl border border-indigo-700 z-20 py-2 transform origin-top-right transition-all duration-200">
+                    <div className="px-4 py-3 border-b border-indigo-700/50">
+                      <div className="text-sm font-semibold text-white">{displayName}</div>
+                      <div className="text-xs text-indigo-200">Administrator</div>
+                    </div>
+                    <div className="py-2">
+                      <button
+                        onClick={openProfileModal}
+                        className="w-full text-left flex items-center gap-3 px-4 py-2.5 text-sm text-indigo-100 hover:bg-indigo-700/50 transition-colors duration-150"
+                      >
+                        <User className="w-4 h-4" />
+                        Edit Profil
+                      </button>
+                      <button
+                        onClick={openPasswordModal}
+                        className="w-full text-left flex items-center gap-3 px-4 py-2.5 text-sm text-indigo-100 hover:bg-indigo-700/50 transition-colors duration-150"
+                      >
+                        <Key className="w-4 h-4" />
+                        Ubah Password
+                      </button>
+                    </div>
+                    <div className="border-t border-indigo-700/50 pt-2">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left flex items-center gap-3 px-4 py-2.5 text-sm text-red-300 hover:bg-red-500/20 transition-colors duration-150 rounded-lg mx-2"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Logout
+                      </button>
+                    </div>
                   </div>
                 </>
               )}
             </div>
 
+            {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen((v) => !v)}
-              className="md:hidden p-2 rounded-lg hover:bg-gray-100"
+              className="md:hidden p-2.5 rounded-xl hover:bg-indigo-700/50 transition-all duration-200 border border-transparent hover:border-indigo-600/50"
               aria-label="Toggle menu"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? <X className="w-6 h-6 text-white" /> : <Menu className="w-6 h-6 text-white" />}
             </button>
           </div>
         </div>
 
+        {/* Mobile Menu (tetap sama seperti sebelumnya) */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t bg-white">
+          <div className="md:hidden border-t border-indigo-700 bg-indigo-900/95 backdrop-blur-xl">
             <div className="px-4 py-3 space-y-1">
-              {menu.map((item) => {
+              {flatMenu.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.to);
                 return (
@@ -248,41 +385,46 @@ export default function AdminLayout({ children }) {
                     key={item.to}
                     to={item.to}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium ${
-                      active ? "bg-indigo-50 text-indigo-700" : "text-gray-600 hover:bg-gray-50"
+                    className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                      active
+                        ? "bg-indigo-700 text-white shadow-sm border border-indigo-600/50"
+                        : "text-indigo-100 hover:bg-indigo-700/50"
                     }`}
                   >
-                    <Icon className="w-5 h-5" />
+                    <Icon className={`w-5 h-5 ${active ? "scale-110" : ""}`} />
                     {item.label}
                   </Link>
                 );
               })}
 
-              <hr className="my-2" />
+              <hr className="my-2 border-indigo-700/50" />
 
-              <button
-                onClick={() => { setMobileMenuOpen(false); openProfileModal(); }}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50 w-full text-left"
-              >
-                <User className="w-5 h-5" />
-                Edit Profil
-              </button>
-
-              <button
-                onClick={() => { setMobileMenuOpen(false); openPasswordModal(); }}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50 w-full text-left"
-              >
-                <Key className="w-5 h-5" />
-                Ubah Password
-              </button>
-
-              <button
-                onClick={() => { setMobileMenuOpen(false); handleLogout(); }}
-                className="w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50"
-              >
-                <LogOut className="w-5 h-5" />
-                Logout
-              </button>
+              <div className="px-3 py-2">
+                <div className="text-xs font-medium text-indigo-300 uppercase tracking-wider mb-2">
+                  Akun
+                </div>
+                <button
+                  onClick={() => { setMobileMenuOpen(false); openProfileModal(); }}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-indigo-100 hover:bg-indigo-700/50 w-full text-left transition-colors duration-150"
+                >
+                  <User className="w-5 h-5" />
+                  Edit Profil
+                </button>
+                <button
+                  onClick={() => { setMobileMenuOpen(false); openPasswordModal(); }}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-indigo-100 hover:bg-indigo-700/50 w-full text-left transition-colors duration-150"
+                >
+                  <Key className="w-5 h-5" />
+                  Ubah Password
+                </button>
+                <button
+                  onClick={() => { setMobileMenuOpen(false); handleLogout(); }}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-red-300 hover:bg-red-500/20 w-full text-left transition-colors duration-150 mt-1"
+                >
+                  <LogOut className="w-5 h-5" />
+                  Logout
+                </button>
+              </div>
             </div>
           </div>
         )}

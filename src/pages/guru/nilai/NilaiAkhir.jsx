@@ -1,8 +1,3 @@
-/*
-File: src/pages/guru/Nilai/NilaiAkhir.jsx
-Deskripsi: Komponen React lengkap dengan handling error Blob-aware untuk download template dan import.
-*/
-
 import React, { useState, useEffect } from "react";
 import { Download, Upload, RefreshCw, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import GuruLayout from "../../../components/layout/GuruLayout";
@@ -11,14 +6,12 @@ import api from "../../../_api";
 import { getSemesterByTahunAjaran, showByGuru } from "../../../_services/waliKelas";
 
 // Helper: parse error response even when responseType='blob'
-// Bisa dipindah ke util terpisah (mis. src/utils/axiosHelpers.js) untuk reuse
 const parseErrorMessage = async (err) => {
   const respData = err?.response?.data;
   if (!respData) {
     return err?.response?.data?.message || err?.message || "Terjadi kesalahan";
   }
 
-  // Jika backend mengembalikan JSON tapi axios dipanggil dengan responseType='blob'
   if (typeof Blob !== "undefined" && respData instanceof Blob) {
     try {
       const text = await respData.text();
@@ -26,17 +19,13 @@ const parseErrorMessage = async (err) => {
         const json = JSON.parse(text);
         return json?.message || text || err?.message || "Terjadi kesalahan";
       } catch (e) {
-        // bukan JSON, return plain text
-        console.log("Error response is not JSON:", e);
-        return text || err?.message || "Terjadi kesalahan";
+        return text || err?.message || "Terjadi kesalahan" ;
       }
     } catch (e) {
-      console.log("Error parsing JSON:", e);
       return err?.message || "Terjadi kesalahan";
     }
   }
 
-  // Jika object biasa
   return err?.response?.data?.message || err?.message || "Terjadi kesalahan";
 };
 
@@ -44,7 +33,7 @@ export default function NilaiAkhir() {
   const [kelas, setKelas] = useState([]);
   const [selectedKelas, setSelectedKelas] = useState("");
   const [semesters, setSemesters] = useState([]);
-  const [selectedSemester, setSelectedSemester] = useState("");
+  const [selectedSemester, setSelectedSemester] = useState(null); // Change to object
   const [tahunAjaran, setTahunAjaran] = useState(null);
 
   const [file, setFile] = useState(null);
@@ -68,7 +57,6 @@ export default function NilaiAkhir() {
       const resYear = await api.get("/tahun-ajaran/active");
       const yearData = resYear.data?.data || resYear.data;
       setTahunAjaran(yearData);
-      await fetchKelasByGuru(yearData?.id);
     } catch (err) {
       const msg = err?.response?.data?.message || err?.message || "Gagal memuat data awal";
       setError(msg);
@@ -102,18 +90,12 @@ export default function NilaiAkhir() {
       const semList = res.data?.data ?? res.data ?? res.data?.semesters ?? [];
       setSemesters(Array.isArray(semList) ? semList : []);
 
-      const semesterToValue = (s) => {
-        const name = (s.nama ?? s.name ?? "").toString().toLowerCase();
-        if (name.includes("genap")) return "2";
-        if (name.includes("ganjil")) return "1";
-        if (s.semester != null) return String(s.semester);
-        if (s.number != null) return String(s.number);
-        return String(s.id ?? "");
-      };
-
+      // Set active semester as default
       const activeSem = (Array.isArray(semList) ? semList : []).find((s) => s.is_active);
       if (activeSem) {
-        setSelectedSemester(semesterToValue(activeSem));
+        setSelectedSemester(activeSem);
+      } else if (semList.length > 0) {
+        setSelectedSemester(semList[0]);
       }
     } catch (err) {
       console.error("Gagal memuat semester", err);
@@ -130,20 +112,29 @@ export default function NilaiAkhir() {
     setError(null);
 
     try {
-      const res = await downloadTemplate(Number(selectedKelas), Number(selectedSemester));
+      const res = await downloadTemplate(Number(selectedKelas), Number(selectedSemester.id));
 
-      // jika server mengembalikan file blob sukses
-      // res.data diharapkan Blob
       const blob = new Blob([res.data]);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
 
-      const kelasNama = kelas.find((k) => k.id == selectedKelas)?.nama || selectedKelas;
-      link.setAttribute("download", `Template_Nilai_Kelas${kelasNama}_Semester${selectedSemester}.xlsx`);
+      const kelasObj = kelas.find((k) => k.id == selectedKelas);
+      const kelasNama = kelasObj?.nama || selectedKelas;
+      const semesterNama = selectedSemester?.nama || selectedSemester?.name || `Semester_${selectedSemester.id}`;
+      
+      // Clean filename: remove spaces and special chars
+      const cleanKelasNama = kelasNama.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
+      const cleanSemesterNama = semesterNama.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
+      
+      link.setAttribute("download", `Template_Nilai_${cleanKelasNama}_${cleanSemesterNama}.xlsx`);
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link);
+      
+      // Show success message
+      setError(null);
+      alert("Template berhasil didownload!");
     } catch (err) {
       const msg = await parseErrorMessage(err);
       setError(msg);
@@ -185,7 +176,7 @@ export default function NilaiAkhir() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const res = await importNilai(Number(selectedKelas), Number(selectedSemester), formData, dryRun);
+      const res = await importNilai(Number(selectedKelas), Number(selectedSemester.id), formData, dryRun);
       setImportResult(res.data);
 
       if (!dryRun && res.data?.summary?.success_count > 0) {
@@ -213,20 +204,15 @@ export default function NilaiAkhir() {
             </div>
           </div>
 
-          {/* Error block with special handling for 'belum memiliki mapel' */}
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 flex items-start gap-2">
               <XCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-              <div>
+              <div className="flex-1">
                 <p className="font-medium">{error}</p>
 
-                {/* jika pesan menyebut 'belum memiliki mapel', tampilkan saran tindakan */}
                 {typeof error === "string" && error.toLowerCase().includes("belum memiliki mapel") && (
                   <div className="mt-2 text-sm text-red-700">
                     <p>Silakan assign mapel terlebih dahulu melalui menu admin agar template bisa dibuat.</p>
-                    <div className="mt-3 flex gap-2">
-                 
-                    </div>
                   </div>
                 )}
               </div>
@@ -265,9 +251,10 @@ export default function NilaiAkhir() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Pilih Semester</label>
               <select
-                value={selectedSemester}
+                value={selectedSemester?.id || ""}
                 onChange={(e) => {
-                  setSelectedSemester(e.target.value);
+                  const sem = semesters.find(s => s.id === Number(e.target.value));
+                  setSelectedSemester(sem || null);
                   setImportResult(null);
                   setError(null);
                 }}
@@ -275,18 +262,9 @@ export default function NilaiAkhir() {
               >
                 <option value="">-- Pilih Semester --</option>
                 {semesters.map((s) => (
-                  <option
-                    key={s.id}
-                    value={(() => {
-                      const name = (s.nama ?? s.name ?? "").toString().toLowerCase();
-                      if (name.includes("genap") || name.includes("even")) return "2";
-                      if (name.includes("ganjil") || name.includes("odd")) return "1";
-                      if (s.semester != null) return String(s.semester);
-                      if (s.number != null) return String(s.number);
-                      return String(s.id ?? "");
-                    })()}
-                  >
-                    {s.nama ?? `Semester ${s.semester ?? s.number ?? s.id}`} {s.is_active && "(Aktif)"}
+                  <option key={s.id} value={s.id}>
+                    {s.nama ?? s.name ?? `Semester ${s.semester ?? s.number ?? s.id}`} 
+                    {s.is_active && " (Aktif)"}
                   </option>
                 ))}
               </select>
@@ -303,6 +281,11 @@ export default function NilaiAkhir() {
               <Download className="w-5 h-5" />
               {loading ? "Memproses..." : "Download Template Excel"}
             </button>
+            <p className="text-xs text-gray-500 mt-2">
+              File akan didownload dengan nama: Template_Nilai_
+              {selectedKelas && kelas.find(k => k.id == selectedKelas)?.nama}_
+              {selectedSemester?.nama || selectedSemester?.name || ''}.xlsx
+            </p>
           </div>
 
           <div className="border-t pt-6 mt-6">
@@ -317,7 +300,7 @@ export default function NilaiAkhir() {
               />
 
               {file && (
-                <div className="flex items-center gap-2 text-sm text-gray-700">
+                <div className="flex items-center gap-2 text-sm text-gray-700 bg-green-50 p-3 rounded-lg border border-green-200">
                   <CheckCircle className="w-4 h-4 text-green-600" />
                   <span>
                     File dipilih: <span className="font-medium">{file.name}</span>
@@ -369,29 +352,32 @@ export default function NilaiAkhir() {
 
             {importResult.summary?.unmatched_mapel_headers?.length > 0 && (
               <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="font-medium text-amber-900 mb-2">Mapel tidak ditemukan di database:</p>
+                <p className="font-medium text-amber-900 mb-2">⚠️ Mapel tidak ditemukan di database:</p>
                 <ul className="list-disc list-inside text-sm text-amber-800">
                   {importResult.summary.unmatched_mapel_headers.map((m, i) => (
                     <li key={i}>{m}</li>
                   ))}
                 </ul>
+                <p className="text-xs text-amber-700 mt-2">
+                  Pastikan nama mapel di Excel sesuai dengan yang ada di database
+                </p>
               </div>
             )}
 
             {importResult.details?.failed?.length > 0 && (
               <div className="mb-6">
-                <h3 className="font-semibold text-gray-900 mb-3">Data Gagal ({importResult.details.failed.length})</h3>
-                <div className="overflow-x-auto">
+                <h3 className="font-semibold text-gray-900 mb-3">❌ Data Gagal ({importResult.details.failed.length})</h3>
+                <div className="overflow-x-auto border rounded-lg">
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-4 py-2 text-left">Baris</th>
-                        <th className="px-4 py-2 text-left">Nama</th>
-                        <th className="px-4 py-2 text-left">Mapel</th>
-                        <th className="px-4 py-2 text-left">Alasan</th>
+                        <th className="px-4 py-2 text-left font-medium text-gray-700">Baris</th>
+                        <th className="px-4 py-2 text-left font-medium text-gray-700">Nama</th>
+                        <th className="px-4 py-2 text-left font-medium text-gray-700">Mapel</th>
+                        <th className="px-4 py-2 text-left font-medium text-gray-700">Alasan</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y">
+                    <tbody className="divide-y bg-white">
                       {importResult.details.failed.map((item, i) => (
                         <tr key={i} className="hover:bg-gray-50">
                           <td className="px-4 py-2">{item.row}</td>
@@ -408,24 +394,24 @@ export default function NilaiAkhir() {
 
             {importResult.details?.success?.length > 0 && (
               <div>
-                <h3 className="font-semibold text-gray-900 mb-3">Data Berhasil ({importResult.details.success.length})</h3>
-                <div className="overflow-x-auto max-h-96 overflow-y-auto">
+                <h3 className="font-semibold text-gray-900 mb-3">✅ Data Berhasil ({importResult.details.success.length})</h3>
+                <div className="overflow-x-auto max-h-96 overflow-y-auto border rounded-lg">
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50 sticky top-0">
                       <tr>
-                        <th className="px-4 py-2 text-left">Baris</th>
-                        <th className="px-4 py-2 text-left">Nama</th>
-                        <th className="px-4 py-2 text-left">Mapel</th>
-                        <th className="px-4 py-2 text-left">Nilai</th>
+                        <th className="px-4 py-2 text-left font-medium text-gray-700">Baris</th>
+                        <th className="px-4 py-2 text-left font-medium text-gray-700">Nama</th>
+                        <th className="px-4 py-2 text-left font-medium text-gray-700">Mapel</th>
+                        <th className="px-4 py-2 text-left font-medium text-gray-700">Nilai</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y">
+                    <tbody className="divide-y bg-white">
                       {importResult.details.success.map((item, i) => (
                         <tr key={i} className="hover:bg-gray-50">
                           <td className="px-4 py-2">{item.row}</td>
                           <td className="px-4 py-2">{item.nama}</td>
                           <td className="px-4 py-2">{item.mapel}</td>
-                          <td className="px-4 py-2 font-medium">{item.nilai}</td>
+                          <td className="px-4 py-2 font-medium text-green-700">{item.nilai}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -439,4 +425,3 @@ export default function NilaiAkhir() {
     </GuruLayout>
   );
 }
-

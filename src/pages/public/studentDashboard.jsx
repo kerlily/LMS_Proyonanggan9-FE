@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { getNilaiMe, changePassword, logoutSiswa } from "../../_services/siswa";
+import { getNilaiMe, getKetidakhadiranMe, getNilaiSikapMe, changePassword, logoutSiswa } from "../../_services/siswa";
 
 /**
  * StudentDashboard (tabel per Tahun Ajaran)
  * - One table per year (oldest -> newest)
  * - Columns: No | Mata Pelajaran | Semester... | Rata-rata
  * - Color-coded value badges: <40 red, <60 yellow, >=60 green
+ * - Added: Ketidakhadiran and Nilai Sikap sections per semester
  */
 
 function valueBadge(val) {
@@ -22,26 +23,38 @@ function valueBadge(val) {
   return { cls: "text-green-800 bg-green-100", text: String(n) };
 }
 
+function nilaiSikapBadge(nilai) {
+  // Color coding for attitude grades
+  const badges = {
+    'A': { cls: "text-blue-700 bg-blue-100", text: "A - Sangat Baik" },
+    'B': { cls: "text-green-700 bg-green-100", text: "B - Baik" },
+    'C': { cls: "text-yellow-700 bg-yellow-100", text: "C - Cukup" },
+    'D': { cls: "text-red-700 bg-red-100", text: "D - Perlu Perbaikan" }
+  };
+  return badges[nilai] ?? { cls: "text-gray-400 bg-gray-100", text: "-" };
+}
+
 export default function StudentDashboard() {
   const [nilaiData, setNilaiData] = useState(null);
+  const [ketidakhadiranData, setKetidakhadiranData] = useState(null);
+  const [nilaiSikapData, setNilaiSikapData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [newPassword, setNewPassword] = useState("");
   const [msg, setMsg] = useState(null);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-    const didFetchRef = useRef(false);
+  const didFetchRef = useRef(false);
 
   useEffect(() => {
-   const siswaToken = localStorage.getItem("siswa_token") || localStorage.getItem("token");
+    const siswaToken = localStorage.getItem("siswa_token") || localStorage.getItem("token");
     if (!siswaToken) {
-     navigate("/siswa/login");
+      navigate("/siswa/login");
       return;
     }
 
     let mounted = true;
     if (didFetchRef.current) {
-      // sudah memanggil sebelumnya pada lifecycle ini => hindari duplicate request
       setLoading(false);
       return;
     }
@@ -49,11 +62,20 @@ export default function StudentDashboard() {
 
     (async () => {
       try {
-        const res = await getNilaiMe();
+        // Fetch all data in parallel
+        const [nilaiRes, ketidakhadiranRes, nilaiSikapRes] = await Promise.all([
+          getNilaiMe(),
+          getKetidakhadiranMe(),
+          getNilaiSikapMe()
+        ]);
+        
         if (!mounted) return;
-        setNilaiData(res.data);
+        
+        setNilaiData(nilaiRes.data);
+        setKetidakhadiranData(ketidakhadiranRes.data);
+        setNilaiSikapData(nilaiSikapRes.data);
       } catch (err) {
-        console.error("Gagal ambil nilai:", err);
+        console.error("Gagal ambil data:", err);
         if (err?.response?.status === 401) {
           try {
             await logoutSiswa();
@@ -62,7 +84,7 @@ export default function StudentDashboard() {
           }
           navigate("/siswa/login");
         } else {
-          setError("Gagal memuat data nilai.");
+          setError("Gagal memuat data.");
         }
       } finally {
         if (mounted) setLoading(false);
@@ -94,6 +116,7 @@ export default function StudentDashboard() {
 
   // prefer academic_records (new structure), fallback to semesters
   const records = nilaiData.academic_records ?? nilaiData.semesters ?? [];
+  
   // group by tahun_ajaran (object) id (or fallback)
   const yearsMap = new Map();
   records.forEach((rec) => {
@@ -105,15 +128,12 @@ export default function StudentDashboard() {
 
   // convert and sort ascending (oldest first)
   const yearsArr = Array.from(yearsMap.values()).sort((a, b) => {
-    const A = a.tahun,
-      B = b.tahun;
+    const A = a.tahun, B = b.tahun;
     if (!A && !B) return 0;
     if (!A) return -1;
     if (!B) return 1;
-    // try numeric id
     if (typeof A.id === "number" && typeof B.id === "number")
       return A.id - B.id;
-    // parse starting year from name like "2023/2024"
     const parseStart = (s) => {
       if (!s) return 0;
       const m = String(s).match(/\d{4}/);
@@ -122,9 +142,24 @@ export default function StudentDashboard() {
     return parseStart(A.nama) - parseStart(B.nama);
   });
 
+  // Helper: get ketidakhadiran for specific tahun_ajaran + semester
+  function getKetidakhadiran(tahunId, semesterId) {
+    if (!ketidakhadiranData?.data) return null;
+    return ketidakhadiranData.data.find(
+      k => k.tahun_ajaran?.id === tahunId && k.semester?.id === semesterId
+    );
+  }
+
+  // Helper: get nilai sikap for specific tahun_ajaran + semester
+  function getNilaiSikap(tahunId, semesterId) {
+    if (!nilaiSikapData?.data) return null;
+    return nilaiSikapData.data.find(
+      n => n.tahun_ajaran?.id === tahunId && n.semester?.id === semesterId
+    );
+  }
+
   // helper: build table data for a year's entries
   function buildYearTable(entries) {
-    // collect semester objects (unique)
     const semList = [];
     entries.forEach((e) => {
       const s = e.semester ?? null;
@@ -132,18 +167,15 @@ export default function StudentDashboard() {
       const key = s.id ?? s.semester ?? JSON.stringify(s);
       if (!semList.some((x) => x.key === key)) semList.push({ key, info: s });
     });
-    // sort semList by id/semester
     semList.sort((a, b) => {
       const ai = a.info?.id ?? a.info?.semester ?? 0;
       const bi = b.info?.id ?? b.info?.semester ?? 0;
       return ai - bi;
     });
 
-    // collect union of subjects (mapel) and store values+notes per semester
     const mapelMap = new Map();
     entries.forEach((e) => {
       const nilaiList = e.nilai ?? e.mapels ?? [];
-      // determine semester key for this entry
       const semKey = e.semester?.id ?? e.semester?.semester ?? "__sem__";
       nilaiList.forEach((n) => {
         const mapelObj = n.mapel ?? null;
@@ -160,7 +192,6 @@ export default function StudentDashboard() {
           n.mapel_name ??
           "—";
         if (!mapelMap.has(mid)) {
-          // note: values is Map<semKey, { value: number|null, note: string }>
           mapelMap.set(mid, { id: mid, nama: mname, values: new Map() });
         }
         const val =
@@ -174,7 +205,6 @@ export default function StudentDashboard() {
       });
     });
 
-    // ensure mapels are in stable order (by name)
     const mapelRows = Array.from(mapelMap.values()).sort((a, b) => {
       const A = String(a.nama).toLowerCase();
       const B = String(b.nama).toLowerCase();
@@ -216,27 +246,23 @@ export default function StudentDashboard() {
         const entries = y.entries;
 
         const kelasSet = new Set(
-    entries
-      .map((e) => e.kelas_historis?.nama) // ambil nama kelas_historis jika ada
-      .filter((v) => v) // filter null/undefined/""
-  );
-   let kelasLabel = "";
-  if (kelasSet.size === 1) {
-    kelasLabel = Array.from(kelasSet)[0];
-  } else if (kelasSet.size > 1) {
-    kelasLabel = Array.from(kelasSet).join(" / ");
-  } else {
-    // fallback ke current class dari siswa (field di response.json: siswa.kelas_saat_ini)
-    kelasLabel = nilaiData.siswa?.kelas_saat_ini ?? "";
-  }
-
+          entries
+            .map((e) => e.kelas_historis?.nama)
+            .filter((v) => v)
+        );
+        let kelasLabel = "";
+        if (kelasSet.size === 1) {
+          kelasLabel = Array.from(kelasSet)[0];
+        } else if (kelasSet.size > 1) {
+          kelasLabel = Array.from(kelasSet).join(" / ");
+        } else {
+          kelasLabel = nilaiData.siswa?.kelas_saat_ini ?? "";
+        }
 
         const { semesters, mapelRows } = buildYearTable(entries);
 
-        // compute per-semester averages and year average
         const semKeys = semesters.map((s) => s?.id ?? s?.semester ?? "__sem__");
         const perMapel = mapelRows.map((mr) => {
-          // extract numeric values only
           const rawValues = semKeys.map((k) => {
             const cell = mr.values.get(k);
             return cell && typeof cell.value === "number" ? cell.value : null;
@@ -268,8 +294,8 @@ export default function StudentDashboard() {
                   Tahun Ajaran: {tahun?.nama ?? "-"}
                 </div>
                 <div className="font-semibold text-lg mt-1">
-  {kelasLabel || (semesters.length ? semesters.map((s,i)=> (i? " / " : "") + (s.nama ?? `Semester ${i+1}`)) : "Semester -")}
-</div>
+                  {kelasLabel || (semesters.length ? semesters.map((s,i)=> (i? " / " : "") + (s.nama ?? `Semester ${i+1}`)) : "Semester -")}
+                </div>
               </div>
               <div className="text-sm text-gray-700">
                 Rata-rata tahun:{" "}
@@ -279,7 +305,7 @@ export default function StudentDashboard() {
               </div>
             </div>
 
-            {/* Render each semester as its own stacked table */}
+            {/* Render each semester */}
             {mapelRows.length === 0 ? (
               <div className="py-6 px-3 text-gray-500 text-center">
                 Belum ada data mapel untuk tahun ajaran ini.
@@ -288,7 +314,7 @@ export default function StudentDashboard() {
               semesters.map((s, idx) => {
                 const semKey = s?.id ?? s?.semester ?? `__sem__${idx}`;
                 const rows = mapelRows;
-                // per-semester average across mapels
+                
                 const semVals = mapelRows
                   .map((mr) => {
                     const c = mr.values.get(semKey);
@@ -304,6 +330,10 @@ export default function StudentDashboard() {
                   ? semVals.reduce((a, b) => a + b, 0) / semVals.length
                   : null;
 
+                // Get attendance and attitude data for this semester
+                const ketidakhadiran = getKetidakhadiran(tahun?.id, s?.id);
+                const nilaiSikap = getNilaiSikap(tahun?.id, s?.id);
+
                 return (
                   <div key={semKey} className="mb-4 bg-gray-50 rounded p-3">
                     <div className="mb-2 flex items-center justify-between">
@@ -318,7 +348,8 @@ export default function StudentDashboard() {
                       </div>
                     </div>
 
-                    <div className="overflow-x-auto">
+                    {/* Nilai Akademik Table */}
+                    <div className="overflow-x-auto mb-4">
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="border-b-2">
@@ -333,7 +364,7 @@ export default function StudentDashboard() {
                               Rata-rata
                             </th>
                             <th className="py-3 px-3 w-32 text-center">
-                              catatan
+                              Catatan
                             </th>
                           </tr>
                         </thead>
@@ -346,7 +377,6 @@ export default function StudentDashboard() {
                             const v = cell.value;
                             const note = cell.note ?? "-";
                             const badge = valueBadge(v);
-                            // per-mapel avg for this single semester is the value itself (or null)
                             const avg =
                               typeof v === "number" && !Number.isNaN(v)
                                 ? v
@@ -379,6 +409,64 @@ export default function StudentDashboard() {
                         </tbody>
                       </table>
                     </div>
+
+                    {/* Ketidakhadiran Section */}
+                    <div className="bg-white rounded p-3 mb-3">
+                      <h4 className="font-semibold text-sm mb-2">Ketidakhadiran</h4>
+                      {ketidakhadiran ? (
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
+                          <div className="bg-yellow-50 p-2 rounded">
+                            <div className="text-gray-600 text-xs">Ijin</div>
+                            <div className="font-semibold text-lg">{ketidakhadiran.ijin}</div>
+                          </div>
+                          <div className="bg-blue-50 p-2 rounded">
+                            <div className="text-gray-600 text-xs">Sakit</div>
+                            <div className="font-semibold text-lg">{ketidakhadiran.sakit}</div>
+                          </div>
+                          <div className="bg-red-50 p-2 rounded">
+                            <div className="text-gray-600 text-xs">Alpa</div>
+                            <div className="font-semibold text-lg">{ketidakhadiran.alpa}</div>
+                          </div>
+                          <div className="bg-gray-50 p-2 rounded">
+                            <div className="text-gray-600 text-xs">Total</div>
+                            <div className="font-semibold text-lg">{ketidakhadiran.total}</div>
+                          </div>
+                          {ketidakhadiran.catatan && (
+                            <div className="col-span-2 md:col-span-5 bg-gray-50 p-2 rounded">
+                              <div className="text-gray-600 text-xs">Catatan</div>
+                              <div className="text-sm mt-1">{ketidakhadiran.catatan}</div>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-gray-500">Belum ada data ketidakhadiran</div>
+                      )}
+                    </div>
+
+                    {/* Nilai Sikap Section */}
+                    <div className="bg-white rounded p-3">
+                      <h4 className="font-semibold text-sm mb-2">Nilai Sikap</h4>
+                      {nilaiSikap ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-600">Nilai:</span>
+                            <span
+                              className={`inline-block px-3 py-1 rounded ${nilaiSikapBadge(nilaiSikap.nilai).cls} font-semibold`}
+                            >
+                              {nilaiSikapBadge(nilaiSikap.nilai).text}
+                            </span>
+                          </div>
+                          {nilaiSikap.deskripsi && (
+                            <div className="bg-gray-50 p-2 rounded">
+                              <div className="text-gray-600 text-xs mb-1">Deskripsi</div>
+                              <div className="text-sm">{nilaiSikap.deskripsi}</div>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-gray-500">Belum ada data nilai sikap</div>
+                      )}
+                    </div>
                   </div>
                 );
               })
@@ -387,6 +475,7 @@ export default function StudentDashboard() {
         );
       })}
 
+      {/* Global Average */}
       <div className="bg-white rounded shadow p-4">
         {(() => {
           const allVals = [];
@@ -411,7 +500,7 @@ export default function StudentDashboard() {
         })()}
       </div>
 
-      {/* change password */}
+      {/* Change Password */}
       <div className="mt-2 bg-white p-4 rounded shadow">
         <h3 className="font-semibold mb-2">Ganti Password</h3>
         <div className="flex gap-2">

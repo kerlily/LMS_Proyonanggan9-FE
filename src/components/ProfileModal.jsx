@@ -1,7 +1,7 @@
-// src/components/ProfileModal.jsx - FIXED VERSION
+// src/components/ProfileModal.jsx - MODERN VERSION
 import React, { useEffect, useState } from "react";
 import Modal from "react-modal";
-import { X, Camera, Loader } from "lucide-react";
+import { X, Camera, Loader, User, Mail, Phone, IdCard } from "lucide-react";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import { updateMyProfile } from "../_services/profile";
@@ -32,7 +32,6 @@ function buildPhotoUrl(data) {
     }
     
     // FIXED: Gunakan API base URL bukan window.location.origin
-    // window.location.origin hilang port number di dev environment
     const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
     const url = `${baseUrl}/storage/${data.photo}`;
     console.log("✅ Built photo URL from path:", url);
@@ -114,7 +113,10 @@ export default function ProfileModal({ isOpen, onRequestClose, initialUser }) {
       MySwal.fire({ 
         icon: "warning", 
         title: "Peringatan",
-        text: "Nama dan email harus diisi"
+        text: "Nama dan email harus diisi",
+        background: '#1e1b4b',
+        color: 'white',
+        confirmButtonColor: '#6366f1'
       });
       return;
     }
@@ -142,7 +144,9 @@ export default function ProfileModal({ isOpen, onRequestClose, initialUser }) {
         title: "Berhasil!",
         text: "Profil berhasil diperbarui",
         timer: 2000,
-        showConfirmButton: false
+        showConfirmButton: false,
+        background: '#1e1b4b',
+        color: 'white'
       });
 
       // Update localStorage
@@ -225,6 +229,9 @@ export default function ProfileModal({ isOpen, onRequestClose, initialUser }) {
         icon: "error",
         title: "Gagal Menyimpan",
         text: errorMessage,
+        background: '#1e1b4b',
+        color: 'white',
+        confirmButtonColor: '#6366f1'
       });
     } finally {
       setSaving(false);
@@ -249,110 +256,142 @@ export default function ProfileModal({ isOpen, onRequestClose, initialUser }) {
     <Modal
       isOpen={isOpen}
       onRequestClose={() => !saving && onRequestClose()}
-      overlayClassName="fixed inset-0 bg-black/40 z-50 flex items-start sm:items-center justify-center p-4"
-      className="bg-white rounded-lg max-w-xl w-full shadow-lg outline-none max-h-[90vh] overflow-y-auto"
+      overlayClassName="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-start sm:items-center justify-center p-4"
+      className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-2xl max-w-md w-full shadow-2xl outline-none "
     >
-      <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white z-10">
-        <h3 className="text-lg font-semibold">Edit Profil</h3>
+      {/* Header */}
+      <div className="p-6 border-b border-slate-200/50 flex items-center justify-between bg-gradient-to-r from-indigo-600 to-purple-600 rounded-t-2xl">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-white/20 rounded-lg">
+            <User className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-white">Edit Profil</h3>
+            <p className="text-indigo-100 text-sm">Perbarui informasi profil Anda</p>
+          </div>
+        </div>
         <button 
           onClick={() => !saving && onRequestClose()} 
-          className="p-1 rounded hover:bg-gray-100"
+          className="p-2 rounded-lg hover:bg-white/10 transition-all duration-200 group"
           disabled={saving}
         >
-          <X className="w-5 h-5" />
+          <X className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-6 space-y-4">
-        <div className="flex items-center gap-4">
-          <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border-2 border-gray-200">
-            {previewUrl && !imageError ? (
-              <img 
-                src={previewUrl} 
-                alt="avatar" 
-                className="w-full h-full object-cover"
-                onError={handleImageError}
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs text-center p-2">
-                No Photo
-              </div>
-            )}
+      <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        {/* Photo Section */}
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
+            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg">
+              {previewUrl && !imageError ? (
+                <img 
+                  src={previewUrl} 
+                  alt="avatar" 
+                  className="w-full h-full object-cover"
+                  onError={handleImageError}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-indigo-400">
+                  <User className="w-8 h-8" />
+                </div>
+              )}
+            </div>
+            <div className="absolute -bottom-2 -right-2">
+              <label className="inline-flex items-center gap-2 cursor-pointer p-2 bg-indigo-600 rounded-full shadow-lg hover:bg-indigo-700 transition-all duration-200 group">
+                <Camera className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleFile} 
+                  className="hidden"
+                  disabled={saving}
+                />
+              </label>
+            </div>
+          </div>
+          <p className="text-xs text-slate-500 text-center">Max 5MB (JPG, PNG, WebP)</p>
+        </div>
+
+        {/* Form Fields */}
+        <div className="space-y-4">
+          {/* Nama Field */}
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+              <User className="w-4 h-4 text-indigo-500" />
+              Nama <span className="text-red-400">*</span>
+            </label>
+            <input 
+              name="nama" 
+              value={form.nama} 
+              onChange={handleChange} 
+              className="w-full px-4 py-3 bg-white/80 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all duration-200 placeholder-slate-400"
+              placeholder="Masukkan nama lengkap"
+              required
+              disabled={saving}
+            />
           </div>
 
-          <div>
-            <label className="inline-flex items-center gap-2 cursor-pointer px-3 py-2 bg-gray-50 border rounded hover:bg-gray-100 transition-colors">
-              <Camera className="w-4 h-4" />
-              <span className="text-sm">Ganti Foto</span>
+          {/* Email Field */}
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+              <Mail className="w-4 h-4 text-indigo-500" />
+              Email <span className="text-red-400">*</span>
+            </label>
+            <input 
+              name="email" 
+              type="email"
+              value={form.email} 
+              onChange={handleChange} 
+              className="w-full px-4 py-3 bg-white/80 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all duration-200 placeholder-slate-400"
+              placeholder="email@example.com"
+              required
+              disabled={saving}
+            />
+          </div>
+
+          {/* Grid Fields */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* No HP Field */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                <Phone className="w-4 h-4 text-indigo-500" />
+                No. HP
+              </label>
               <input 
-                type="file" 
-                accept="image/*" 
-                onChange={handleFile} 
-                className="hidden"
+                name="no_hp" 
+                value={form.no_hp} 
+                onChange={handleChange} 
+                className="w-full px-4 py-3 bg-white/80 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all duration-200 placeholder-slate-400"
+                placeholder="08xxx"
                 disabled={saving}
               />
-            </label>
-            <p className="text-xs text-gray-500 mt-1">Max 5MB (JPG, PNG, WebP)</p>
+            </div>
+
+            {/* NIP Field */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                <IdCard className="w-4 h-4 text-indigo-500" />
+                NIP
+              </label>
+              <input 
+                name="nip" 
+                value={form.nip} 
+                onChange={handleChange} 
+                className="w-full px-4 py-3 bg-white/80 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all duration-200 placeholder-slate-400"
+                placeholder="Nomor Induk Pegawai"
+                disabled={saving}
+              />
+            </div>
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Nama <span className="text-red-500">*</span>
-          </label>
-          <input 
-            name="nama" 
-            value={form.nama} 
-            onChange={handleChange} 
-            className="w-full border px-3 py-2 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            required
-            disabled={saving}
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Email <span className="text-red-500">*</span>
-          </label>
-          <input 
-            name="email" 
-            type="email"
-            value={form.email} 
-            onChange={handleChange} 
-            className="w-full border px-3 py-2 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            required
-            disabled={saving}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-medium mb-1">No. HP</label>
-            <input 
-              name="no_hp" 
-              value={form.no_hp} 
-              onChange={handleChange} 
-              className="w-full border px-3 py-2 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              disabled={saving}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">NIP</label>
-            <input 
-              name="nip" 
-              value={form.nip} 
-              onChange={handleChange} 
-              className="w-full border px-3 py-2 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              disabled={saving}
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-3 pt-4 border-t">
+        {/* Action Buttons */}
+        <div className="flex justify-end gap-3 pt-4 border-t border-slate-200/50">
           <button 
             type="button" 
             onClick={() => !saving && onRequestClose()} 
-            className="px-4 py-2 border rounded hover:bg-gray-50 transition-colors"
+            className="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 transition-all duration-200 font-medium disabled:opacity-50"
             disabled={saving}
           >
             Batal
@@ -360,10 +399,10 @@ export default function ProfileModal({ isOpen, onRequestClose, initialUser }) {
           <button 
             type="submit" 
             disabled={saving} 
-            className={`px-4 py-2 rounded text-white transition-colors flex items-center gap-2 ${
+            className={`px-6 py-2.5 rounded-xl text-white transition-all duration-200 flex items-center gap-2 font-medium shadow-lg ${
               saving 
-                ? "bg-gray-400 cursor-not-allowed" 
-                : "bg-indigo-600 hover:bg-indigo-700"
+                ? "bg-slate-400 cursor-not-allowed" 
+                : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transform hover:scale-105"
             }`}
           >
             {saving && <Loader className="w-4 h-4 animate-spin" />}

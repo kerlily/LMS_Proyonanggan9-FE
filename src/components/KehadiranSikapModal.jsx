@@ -6,8 +6,6 @@ export default function KehadiranSikapModal({
   open, 
   onClose, 
   siswa, 
-  semesterId,
-  kelasId,
   existingKehadiran,
   existingSikap,
   onSave 

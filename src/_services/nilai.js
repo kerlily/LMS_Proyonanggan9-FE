@@ -16,10 +16,10 @@ export const importNilai = (kelasId, semesterId, formData, dryRun = false) => {
   });
 };
 
-export const getNilaiByKelas = (kelasId, semesterId = null) => {
-  const url = semesterId ? `/kelas/${kelasId}/semester/${semesterId}/nilai` : `/kelas/${kelasId}/nilai`;
-  return api.get(url);
+export const getNilaiByKelas = (kelasId, params = {}) => {
+  return api.get(`/kelas/${kelasId}/nilaiKelas`, { params });
 };
+
 
 export const storeNilai = (kelasId, payload) => {
   return api.post(`/kelas/${kelasId}/nilai`, payload);
