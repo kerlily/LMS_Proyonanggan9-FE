@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import { 
   Users, 
   Calculator, 
-  FileText,
   ChevronRight,
   Award,
   UserStar,
@@ -188,7 +187,7 @@ setSiswaCount(siswaCounts);
               <QuickActionCard
                 title="Nilai Sikap"
                 description="Download template dan import nilai akhir"
-                buttonText="Kelola Nilai Sikap"
+                buttonText="Kelola Nilai "
                 onClick={() => goto("/guru/nilai-sikap")}
                 icon={UserStar}
                 color="blue"

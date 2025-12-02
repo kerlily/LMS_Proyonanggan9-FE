@@ -120,7 +120,7 @@ useEffect(() => {
       await loginSiswa({ nama: namaValue, kelas_id: Number(kelasId), password });
     } catch (err) {
       console.error("Login error:", err);
-      const serverMsg = err?.response?.data ?? err?.message ?? "Login gagal";
+      const serverMsg = "Password salah";
       setError(serverMsg?.message || JSON.stringify(serverMsg));
     } finally {
       setLoadingLogin(false);

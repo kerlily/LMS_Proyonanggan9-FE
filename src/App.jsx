@@ -51,6 +51,8 @@ import BeritaDashboardAdmin from "./pages/admin/Berita/BeritaDashboard";
 import GalleryDashboardAdmin from "./pages/admin/Berita/GalleryDashboardAdmin";
 
 import JadwalDashboard from "./pages/guru/jadwal/JadwalDashboard";
+import DashboardNilai from "./pages/guru/nilai/DashboardNilai";
+import SiswaJadwal from "./pages/public/SiswaJadwal";
 
 
 export default function App() {
@@ -151,6 +153,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <StudentDashboard />
+                </ProtectedRoute>
+              }
+            />
+             <Route
+              path="/siswa/jadwal"
+              element={
+                <ProtectedRoute>
+                  <SiswaJadwal />
                 </ProtectedRoute>
               }
             />
@@ -362,6 +372,16 @@ export default function App() {
                 </RoleProtectedRoute>
               }
             />
+
+            <Route
+              path="/guru/nilai-siswa"
+              element={
+                <RoleProtectedRoute allowed={["guru"]}>
+                  <DashboardNilai />
+                </RoleProtectedRoute>
+              }
+            />
+
 
             <Route
               path="/guru/nilai-sikap"

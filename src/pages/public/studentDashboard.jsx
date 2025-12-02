@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { getNilaiMe, getKetidakhadiranMe, getNilaiSikapMe, changePassword, logoutSiswa } from "../../_services/siswa";
+import SiswaLayout from "../../components/layout/SiswaLayout";
 
 /**
  * StudentDashboard (tabel per Tahun Ajaran)
@@ -110,7 +111,16 @@ export default function StudentDashboard() {
     navigate("/siswa/login");
   };
 
-  if (loading) return <div className="p-6">Memuat data...</div>;
+  if (loading) return <div>
+    <SiswaLayout>
+      <div className="py-6">
+    Memuat data...
+
+      </div>
+
+    </SiswaLayout>
+    
+    </div>;
   if (error) return <div className="p-6 text-red-600">{error}</div>;
   if (!nilaiData) return <div className="p-6">Tidak ada data nilai.</div>;
 
@@ -216,6 +226,9 @@ export default function StudentDashboard() {
   }
 
   return (
+    <SiswaLayout>
+
+    
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       {/* Header */}
       <div className="bg-white rounded shadow p-4 flex items-center justify-between">
@@ -360,12 +373,6 @@ export default function StudentDashboard() {
                             <th className="py-3 px-3 w-40 text-center">
                               Nilai
                             </th>
-                            <th className="py-3 px-3 w-32 text-center">
-                              Rata-rata
-                            </th>
-                            <th className="py-3 px-3 w-32 text-center">
-                              Catatan
-                            </th>
                           </tr>
                         </thead>
                         <tbody>
@@ -375,12 +382,8 @@ export default function StudentDashboard() {
                               note: "-",
                             };
                             const v = cell.value;
-                            const note = cell.note ?? "-";
-                            const badge = valueBadge(v);
-                            const avg =
-                              typeof v === "number" && !Number.isNaN(v)
-                                ? v
-                                : null;
+                              const badge = valueBadge(v);
+                            
                             return (
                               <tr
                                 key={mr.id ?? mr.nama ?? i}
@@ -396,12 +399,6 @@ export default function StudentDashboard() {
                                   >
                                     {badge.text}
                                   </span>
-                                </td>
-                                <td className="py-3 px-3 text-center font-semibold">
-                                  {avg !== null ? avg.toFixed(2) : "-"}
-                                </td>
-                                <td className="py-3 px-3 text-center text-sm text-gray-700">
-                                  {note}
                                 </td>
                               </tr>
                             );
@@ -521,5 +518,6 @@ export default function StudentDashboard() {
         {msg && <div className="mt-2 text-sm">{msg}</div>}
       </div>
     </div>
+  </SiswaLayout>
   );
 }

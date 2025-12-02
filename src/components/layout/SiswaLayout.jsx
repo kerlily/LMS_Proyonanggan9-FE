@@ -1,74 +1,102 @@
-// src/components/layout/SiswaLayout.jsx
-import React, { useState, useContext } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, BookOpen, Award, User, LogOut, Menu, X, Key } from "lucide-react";
-import AuthContext from "../../context/AuthContext";
-import api from "../../_api";
-import * as SiswaService from "../../_services/siswa";
+import { Home, Award, Calendar, Key, LogOut, Menu, X, ChevronDown } from "lucide-react";
+import Swal from "sweetalert2";
+import ModalGantiPassword from "../siswa/ModalGantiPassword";
+import { changePassword, logoutSiswa } from "../../_services/siswa";
 
 export default function SiswaLayout({ children }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+
+  const logoutInProgressRef = useRef(false);
+  const navigatedRef = useRef(false);
+
+  // Handle scroll effect for navbar
+  useEffect(() => {
+    const handleScroll = () => {
+      const isScrolled = window.scrollY > 10;
+      setScrolled(isScrolled);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const raw = localStorage.getItem("userInfo") || localStorage.getItem("user");
   const user = raw ? JSON.parse(raw) : null;
 
   const menu = [
-    { icon: Home, label: "Dashboard", to: "/siswa/dashboard" },
-    { icon: BookOpen, label: "Mata Pelajaran", to: "/siswa/mapel" },
-    { icon: Award, label: "Nilai Saya", to: "/siswa/nilai" },
-  ];
+    { icon: Award, label: "Nilai Saya", to: "/siswa/dashboard" },
+    { icon: Calendar, label: "Jadwal", to: "/siswa/jadwal" },
+      ];
 
-  const { logout, setUser, setToken } = useContext(AuthContext);
+  const handleChangePassword = async (formData) => {
+    try {
+      await changePassword(formData);
+    } catch (err) {
+      console.log("error",err)
+    }
+  };
 
- const handleLogout = async () => {
-    // close menus
-    setProfileOpen(false);
-    setMobileMenuOpen(false)
+  // Safe logout helper: guard against repeated calls and double navigation
+  const safeLogout = async () => {
+    if (logoutInProgressRef.current) return;
+    logoutInProgressRef.current = true;
+    setLoggingOut(true);
 
-    // Preferred: use centralized logout if available
-    if (typeof logout === "function") {
+    try {
+      // Attempt server-side logout but ignore network errors (we'll still clear local state)
+      await logoutSiswa().catch((e) => {
+        // swallow network/token errors
+        console.warn("logoutSiswa network error (ignored):", e);
+      });
+    } catch (err) {
+      console.warn("logout unexpected error:", err);
+    } finally {
+      // Clear local auth data no matter what
       try {
-        await logout(); // AuthProvider should clear state + storage
+        localStorage.removeItem("siswa_token");
+        localStorage.removeItem("token");
+        localStorage.removeItem("userInfo");
+        localStorage.removeItem("user");
+      } catch (e) {
+        console.warn("error clearing localStorage:", e);
+      }
+
+      logoutInProgressRef.current = false;
+      setLoggingOut(false);
+
+      // Navigate to login only once
+      if (!navigatedRef.current) {
+        navigatedRef.current = true;
         navigate("/siswa/login");
-        return;
-      } catch (err) {
-        console.warn("AuthContext.logout failed (fallback):", err);
       }
     }
+  };
 
-    // Fallback force-clear to avoid intermediate states causing remounts/spam
-    try {
-      // reset context state if setters exposed
-      if (typeof setToken === "function") setToken(null);
-      if (typeof setUser === "function") setUser(null);
-    } catch (e) {
-      console.warn("Failed to reset AuthContext state:", e);
-    }
+  const handleLogout = async () => {
+    setProfileOpen(false);
+    setMobileMenuOpen(false);
 
-    try {
-      localStorage.clear(); // blunt but effective fallback
-    } catch (e) {
-      console.warn("localStorage.clear failed:", e);
-    }
+    const result = await Swal.fire({
+      title: "Logout?",
+      text: "Apakah Anda yakin ingin keluar?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#9333ea",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Ya, Logout",
+      cancelButtonText: "Batal",
+    });
 
-    // remove axios auth header if present
-    try {
-      if (api?.defaults?.headers?.common) {
-        delete api.defaults.headers.common["Authorization"];
-      }
-    } catch (e) {
-      console.warn("Failed to remove axios Authorization header:", e);
-    }
-
-    // navigate immediately to login to avoid remount loops
-    navigate("/siswa/login");
-
-    // best-effort backend logout (don't await to avoid blocking UI)
-    if (SiswaService && typeof SiswaService.logoutSiswa === "function") {
-      SiswaService.logoutSiswa().catch(() => {});
+    if (result.isConfirmed) {
+      await safeLogout();
     }
   };
 
@@ -76,25 +104,39 @@ export default function SiswaLayout({ children }) {
     return location.pathname.startsWith(path);
   };
 
+  // Memoize display values
+  const displayName = user?.nama ?? "Siswa";
+  const userInitial = displayName.charAt(0).toUpperCase();
+  const userClass = user?.kelas_saat_ini ?? "Siswa";
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
-      {/* Top Navigation Bar */}
-      <nav className="bg-white border-b sticky top-0 z-50 shadow-sm">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
+      {/* Modern Navbar dengan Warna Biru Tua Keunguan */}
+      <nav className={`sticky top-0 z-50 transition-all duration-300 ${
+        scrolled 
+          ? 'bg-indigo-900/95 backdrop-blur-xl border-b border-indigo-700 shadow-lg' 
+          : 'bg-indigo-900 backdrop-blur-lg border-b border-indigo-800'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Logo & Brand */}
+            {/* Logo Section */}
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">S</span>
+              <div className="relative">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 via-indigo-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/25">
+                  <span className="text-white font-bold text-lg">S</span>
+                </div>
+                <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 to-blue-600 rounded-xl blur opacity-20 group-hover:opacity-30 transition duration-1000"></div>
               </div>
               <div>
-                <h1 className="text-lg font-bold text-gray-900">Portal Siswa</h1>
-                <p className="text-xs text-gray-500 hidden sm:block">Learning Management System</p>
+                <h1 className="text-lg font-bold text-white">
+                  Portal Siswa
+                </h1>
+                <p className="text-xs text-indigo-200 hidden sm:block">Learning Management System</p>
               </div>
             </div>
 
-            {/* Desktop Menu */}
-            <div className="hidden md:flex items-center gap-4">
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center gap-1">
               {menu.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.to);
@@ -102,32 +144,44 @@ export default function SiswaLayout({ children }) {
                   <Link
                     key={item.to}
                     to={item.to}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${
                       active
-                        ? "bg-purple-50 text-purple-700"
-                        : "text-gray-600 hover:text-purple-600 hover:bg-gray-50"
+                        ? "text-white bg-indigo-700/50 shadow-sm border border-indigo-600/50"
+                        : "text-indigo-100 hover:text-white hover:bg-indigo-700/30"
                     }`}
                   >
-                    <Icon className="w-4 h-4" />
+                    <Icon className={`w-4 h-4 transition-transform duration-200 ${
+                      active ? "scale-110" : "group-hover:scale-110"
+                    }`} />
                     {item.label}
+                    {active && (
+                      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-white rounded-full"></div>
+                    )}
                   </Link>
                 );
               })}
             </div>
 
-            {/* Profile Dropdown - Desktop */}
+            {/* User Profile Desktop */}
             <div className="hidden md:block relative">
               <button
                 onClick={() => setProfileOpen(!profileOpen)}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-indigo-700/50 transition-all duration-200 group border border-transparent hover:border-indigo-600/50"
+                aria-haspopup="true"
+                aria-expanded={profileOpen}
               >
-                <div className="w-9 h-9 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                  {user?.nama ? user.nama.charAt(0).toUpperCase() : "S"}
+                <div className="relative">
+                  <div className="w-9 h-9 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm ring-2 ring-indigo-400 ring-offset-2 ring-offset-indigo-900">
+                    {userInitial}
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-indigo-900"></div>
                 </div>
+                
                 <div className="text-left">
-                  <div className="text-sm font-medium text-gray-900">{user?.nama ?? "Siswa"}</div>
-                  <div className="text-xs text-gray-500">
-                    {user?.kelas ? `Kelas ${user.kelas}` : "Siswa"}
+                  <div className="text-sm font-semibold text-white">{displayName}</div>
+                  <div className="text-xs text-indigo-200 flex items-center gap-1">
+                    <span>{userClass}</span>
+                    <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${profileOpen ? 'rotate-180' : ''}`} />
                   </div>
                 </div>
               </button>
@@ -135,31 +189,35 @@ export default function SiswaLayout({ children }) {
               {profileOpen && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setProfileOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border z-20 py-1">
-                    <Link
-                      to="/siswa/profile"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      onClick={() => setProfileOpen(false)}
-                    >
-                      <User className="w-4 h-4" />
-                      Profil Saya
-                    </Link>
-                    <Link
-                      to="/siswa/profile/password"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      onClick={() => setProfileOpen(false)}
-                    >
-                      <Key className="w-4 h-4" />
-                      Ubah Password
-                    </Link>
-                    <hr className="my-1" />
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Logout
-                    </button>
+                  <div className="absolute right-0 mt-2 w-64 bg-indigo-800/95 backdrop-blur-xl rounded-2xl shadow-xl border border-indigo-700 z-20 py-2 transform origin-top-right transition-all duration-200">
+                    <div className="px-4 py-3 border-b border-indigo-700/50">
+                      <div className="text-sm font-semibold text-white">{displayName}</div>
+                      <div className="text-xs text-indigo-200">{userClass}</div>
+                    </div>
+                    
+                    <div className="py-2">
+                      <button
+                        onClick={() => {
+                          setProfileOpen(false);
+                          setShowPasswordModal(true);
+                        }}
+                        className="w-full text-left flex items-center gap-3 px-4 py-2.5 text-sm text-indigo-100 hover:bg-indigo-700/50 transition-colors duration-150"
+                      >
+                        <Key className="w-4 h-4" />
+                        Ganti Password
+                      </button>
+                    </div>
+                    
+                    <div className="border-t border-indigo-700/50 pt-2">
+                      <button
+                        onClick={handleLogout}
+                        disabled={loggingOut}
+                        className="w-full text-left flex items-center gap-3 px-4 py-2.5 text-sm text-red-300 hover:bg-red-500/20 transition-colors duration-150 rounded-lg mx-2"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        {loggingOut ? 'Logging out...' : 'Logout'}
+                      </button>
+                    </div>
                   </div>
                 </>
               )}
@@ -168,16 +226,21 @@ export default function SiswaLayout({ children }) {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg hover:bg-gray-100"
+              className="md:hidden p-2.5 rounded-xl hover:bg-indigo-700/50 transition-all duration-200 border border-transparent hover:border-indigo-600/50"
+              aria-label="Toggle menu"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? (
+                <X className="w-6 h-6 text-white" />
+              ) : (
+                <Menu className="w-6 h-6 text-white" />
+              )}
             </button>
           </div>
         </div>
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t bg-white">
+          <div className="md:hidden border-t border-indigo-700 bg-indigo-900/95 backdrop-blur-xl">
             <div className="px-4 py-3 space-y-1">
               {menu.map((item) => {
                 const Icon = item.icon;
@@ -187,41 +250,47 @@ export default function SiswaLayout({ children }) {
                     key={item.to}
                     to={item.to}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium ${
+                    className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
                       active
-                        ? "bg-purple-50 text-purple-700"
-                        : "text-gray-600 hover:bg-gray-50"
+                        ? "bg-indigo-700 text-white shadow-sm border border-indigo-600/50"
+                        : "text-indigo-100 hover:bg-indigo-700/50"
                     }`}
                   >
-                    <Icon className="w-5 h-5" />
+                    <Icon className={`w-5 h-5 ${active ? "scale-110" : ""}`} />
                     {item.label}
                   </Link>
                 );
               })}
-              <hr className="my-2" />
-              <Link
-                to="/siswa/profile"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50"
-              >
-                <User className="w-5 h-5" />
-                Profil Saya
-              </Link>
-              <Link
-                to="/siswa/profile/password"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50"
-              >
-                <Key className="w-5 h-5" />
-                Ubah Password
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50"
-              >
-                <LogOut className="w-5 h-5" />
-                Logout
-              </button>
+              
+              <hr className="my-2 border-indigo-700/50" />
+              
+              <div className="px-3 py-2">
+                <div className="text-xs font-medium text-indigo-300 uppercase tracking-wider mb-2">
+                  Akun
+                </div>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setShowPasswordModal(true);
+                  }}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-indigo-100 hover:bg-indigo-700/50 w-full text-left transition-colors duration-150"
+                >
+                  <Key className="w-5 h-5" />
+                  Ganti Password
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleLogout();
+                  }}
+                  disabled={loggingOut}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-red-300 hover:bg-red-500/20 w-full text-left transition-colors duration-150 mt-1"
+                >
+                  <LogOut className="w-5 h-5" />
+                  {loggingOut ? 'Logging out...' : 'Logout'}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -231,6 +300,13 @@ export default function SiswaLayout({ children }) {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>
+
+      {/* Modal Ganti Password */}
+      <ModalGantiPassword
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+        onSuccess={handleChangePassword}
+      />
     </div>
   );
 }
