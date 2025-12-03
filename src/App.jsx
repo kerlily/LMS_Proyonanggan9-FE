@@ -2,8 +2,8 @@
 import React from "react";
 import { Routes, Route, Link, useLocation } from "react-router-dom";
 import { User, School } from "lucide-react"; // Importing icons from lucide-react
-import MuridImage from "./assets/murid.png"; // Importing student image
-import GuruImage from "./assets/guru.png"; // Importing teacher image
+import MuridImage from "./assets/murid.jpeg"; // Importing student image
+import GuruImage from "./assets/guru.jpeg"; // Importing teacher image
 import DashboardImage from "./assets/dashboard.jpg"; // Importing dashboard image
 
 import ProtectedRoute from "./components/ProtectedRoute";

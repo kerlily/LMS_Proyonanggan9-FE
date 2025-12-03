@@ -208,13 +208,13 @@ export default function StudentDashboard() {
       <div className="bg-white rounded shadow p-4 flex items-center justify-between">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">Dashboard Siswa</h1>
-          <h2 className="text-xl md:text-2xl  text-gray-800 flex items-center gap-2">
+          <h6 className="text-xl md:text-2xl  text-gray-800 flex items-center gap-2">
           Selamat datang,
           <span className="font-bold text-blue-700">
             {nilaiData.siswa?.nama || "Siswa"}
           </span>
           <span className="text-3xl">👋</span>
-        </h2>
+        </h6>
         </div>
        
       </div>
