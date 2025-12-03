@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Download, Upload, RefreshCw, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Download, Upload, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import GuruLayout from "../../../components/layout/GuruLayout";
 import { downloadTemplate, importNilai } from "../../../_services/nilai";
 import api from "../../../_api";
@@ -19,9 +19,11 @@ const parseErrorMessage = async (err) => {
         const json = JSON.parse(text);
         return json?.message || text || err?.message || "Terjadi kesalahan";
       } catch (e) {
+        console.log(e);
         return text || err?.message || "Terjadi kesalahan" ;
       }
     } catch (e) {
+      console.log(e);
       return err?.message || "Terjadi kesalahan";
     }
   }

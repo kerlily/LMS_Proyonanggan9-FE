@@ -9,8 +9,6 @@ import {
   showSiswa,
   updateSiswa,
   deleteSiswa,
-  // OPTIONAL: if you have this in _services/admin you can use it instead of api.post
-  // resetSiswaPassword
 } from "../../../_services/admin";
 import AdminLayout from "../../../components/layout/AdminLayout";
 

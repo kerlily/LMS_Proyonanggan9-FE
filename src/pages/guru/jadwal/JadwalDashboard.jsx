@@ -135,10 +135,10 @@ const JadwalDashboard = () => {
   if (loading && !selectedKelas) {
     return (
     <GuruLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg font-medium">Memuat data...</p>
+          <div className="animate-spin rounded-full h-12 w-12 md:h-16 md:w-16 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600 text-base md:text-lg font-medium">Memuat data...</p>
         </div>
       </div>
     </GuruLayout>
@@ -150,76 +150,76 @@ const JadwalDashboard = () => {
     return (
         <GuruLayout>
 
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 p-6">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 p-4 md:p-6">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-3 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text">
+          <div className="text-center mb-6 md:mb-8">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 md:mb-3 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text">
               Kelola Jadwal Pelajaran
             </h1>
-            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+            <p className="text-gray-600 text-sm md:text-base lg:text-lg max-w-2xl mx-auto px-2">
               Pilih kelas yang Anda ampu untuk mengelola jadwal pelajaran
             </p>
           </div>
 
           {waliKelasList.length === 0 ? (
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-12 text-center border border-white/20">
-              <div className="w-20 h-20 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl md:rounded-2xl shadow-xl p-6 md:p-8 lg:p-12 text-center border border-white/20">
+              <div className="w-14 h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6">
+                <svg className="w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-3">
+              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2 md:mb-3">
                 Anda Belum Menjadi Wali Kelas
               </h2>
-              <p className="text-gray-600 text-lg mb-6 max-w-md mx-auto">
+              <p className="text-gray-600 text-sm md:text-base lg:text-lg mb-4 md:mb-6 max-w-md mx-auto px-2">
                 Saat ini Anda belum ditugaskan sebagai wali kelas. Hubungi administrator untuk penugasan.
               </p>
               <button
                 onClick={() => window.location.reload()}
-                className="px-8 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold"
+                className="px-6 py-2 md:px-8 md:py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg md:rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold text-sm md:text-base"
                 >
                 Refresh Halaman
               </button>
             </div>
           ) : (
             <div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {waliKelasList.map((wk) => (
                   <div
                     key={wk.id}
                     onClick={() => handleSelectKelas(wk)}
-                    className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-white/20 hover:border-blue-300/50 hover:transform hover:-translate-y-1 cursor-pointer group p-6"
+                    className="bg-white/80 backdrop-blur-sm rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl md:hover:shadow-2xl transition-all duration-300 border border-white/20 hover:border-blue-300/50 hover:transform hover:-translate-y-0.5 md:hover:-translate-y-1 cursor-pointer group p-4 md:p-6"
                   >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                        <span className="text-white font-bold text-lg">{wk.kelas.tingkat}</span>
+                    <div className="flex items-start justify-between mb-3 md:mb-4">
+                      <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg md:rounded-xl flex items-center justify-center shadow-md md:shadow-lg">
+                        <span className="text-white font-bold text-base md:text-lg">{wk.kelas.tingkat}</span>
                       </div>
-                      <div className="w-3 h-3 bg-green-400 rounded-full ring-2 ring-green-200 animate-pulse"></div>
+                      <div className="w-2 h-2 md:w-3 md:h-3 bg-green-400 rounded-full ring-1 md:ring-2 ring-green-200 animate-pulse"></div>
                     </div>
                     
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                    <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
                       {wk.kelas.nama}
                     </h3>
                     
-                    <div className="space-y-2 text-sm text-gray-600">
-                      <div className="flex items-center gap-2">
+                    <div className="space-y-1.5 md:space-y-2 text-xs md:text-sm text-gray-600">
+                      <div className="flex items-center gap-1.5 md:gap-2">
                         <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
                         <span>Tingkat: {wk.kelas.tingkat}</span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 md:gap-2">
                         <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
                         <span>Section: {wk.kelas.section}</span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 md:gap-2">
                         <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
                         <span>Tahun Ajaran: {wk.tahunAjaran?.nama || "-"}</span>
                       </div>
                     </div>
                     
-                    <div className="mt-4 pt-4 border-t border-gray-200/50">
+                    <div className="mt-3 md:mt-4 pt-3 md:pt-4 border-t border-gray-200/50">
                       <div className="flex items-center justify-between">
-                        <span className="text-blue-600 font-semibold text-sm">Kelola Jadwal</span>
-                        <svg className="w-5 h-5 text-blue-500 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <span className="text-blue-600 font-semibold text-xs md:text-sm">Kelola Jadwal</span>
+                        <svg className="w-4 h-4 md:w-5 md:h-5 text-blue-500 transform group-hover:translate-x-0.5 md:group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                       </div>
@@ -240,27 +240,27 @@ const JadwalDashboard = () => {
     return (
         <GuruLayout>
 
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 p-6">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 p-4 md:p-6">
         <div className="max-w-7xl mx-auto">
           {/* Breadcrumb */}
-          <div className="mb-8 flex items-center text-sm text-gray-600 bg-white/50 backdrop-blur-sm rounded-xl p-4 shadow-sm">
+          <div className="mb-6 md:mb-8 flex items-center text-xs md:text-sm text-gray-600 bg-white/50 backdrop-blur-sm rounded-lg md:rounded-xl p-3 md:p-4 shadow-sm">
             <button
               onClick={() => setSelectedKelas(null)}
-              className="text-blue-600 hover:text-blue-700 font-medium transition-colors flex items-center gap-2"
+              className="text-blue-600 hover:text-blue-700 font-medium transition-colors flex items-center gap-1.5 md:gap-2"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
               Pilih Kelas
             </button>
-            <span className="mx-3 text-gray-400">›</span>
+            <span className="mx-2 md:mx-3 text-gray-400">›</span>
             <button
               onClick={() => setView("list")}
               className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
             >
               {selectedKelas.kelas.nama}
             </button>
-            <span className="mx-3 text-gray-400">›</span>
+            <span className="mx-2 md:mx-3 text-gray-400">›</span>
             <span className="text-gray-800 font-semibold">
               {view === "create" ? "Buat Jadwal Baru" : "Edit Jadwal"}
             </span>
@@ -282,31 +282,31 @@ const JadwalDashboard = () => {
   return (
             <GuruLayout>
                 
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div>
+        <div className="mb-6 md:mb-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 md:mb-6 gap-4">
+            <div className="w-full">
               <button
                 onClick={() => setSelectedKelas(null)}
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium mb-3 flex items-center gap-2 transition-colors bg-white/50 backdrop-blur-sm px-4 py-2 rounded-xl shadow-sm hover:shadow-md"
+                className="text-xs md:text-sm text-blue-600 hover:text-blue-700 font-medium mb-2 md:mb-3 flex items-center gap-1.5 md:gap-2 transition-colors bg-white/50 backdrop-blur-sm px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl shadow-sm hover:shadow-md w-full md:w-auto"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
                 Kembali ke Pilihan Kelas
               </button>
               
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
-                  <span className="text-white font-bold text-xl">{selectedKelas.kelas.tingkat}</span>
+              <div className="flex items-center gap-3 md:gap-4">
+                <div className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg md:rounded-xl lg:rounded-2xl flex items-center justify-center shadow-md md:shadow-lg">
+                  <span className="text-white font-bold text-base md:text-lg lg:text-xl">{selectedKelas.kelas.tingkat}</span>
                 </div>
                 <div>
-                  <h1 className="text-4xl font-bold text-gray-900 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text">
+                  <h1 className="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text">
                     Jadwal {selectedKelas.kelas.nama}
                   </h1>
-                  <p className="text-gray-600 mt-2 text-lg">
+                  <p className="text-gray-600 mt-1 md:mt-2 text-sm md:text-base lg:text-lg">
                     {tahunAjaranAktif?.nama} • Semester {tahunAjaranAktif?.semester_aktif?.nama}
                   </p>
                 </div>
@@ -314,21 +314,21 @@ const JadwalDashboard = () => {
             </div>
 
             {jadwalData ? (
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-2 md:gap-3 w-full md:w-auto">
                 <button
                   onClick={handleEdit}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold flex items-center gap-2"
+                  className="px-4 py-2 md:px-6 md:py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg md:rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold flex items-center justify-center gap-1.5 md:gap-2 text-sm md:text-base"
                   >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
                   Edit Jadwal
                 </button>
                 <button
                   onClick={handleDelete}
-                  className="px-6 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-xl hover:from-red-600 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold flex items-center gap-2"
+                  className="px-4 py-2 md:px-6 md:py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-lg md:rounded-xl hover:from-red-600 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold flex items-center justify-center gap-1.5 md:gap-2 text-sm md:text-base"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
                   Hapus
@@ -337,9 +337,9 @@ const JadwalDashboard = () => {
             ) : (
                 <button
                 onClick={handleCreateNew}
-                className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold flex items-center gap-3"
+                className="px-6 py-3 md:px-8 md:py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg md:rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold flex items-center justify-center gap-2 md:gap-3 text-sm md:text-base w-full md:w-auto"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
                 Buat Jadwal Baru
@@ -350,69 +350,69 @@ const JadwalDashboard = () => {
 
         {/* Jadwal Display */}
         {loading ? (
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-12 text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
-            <p className="text-gray-600 text-lg font-medium">Memuat jadwal...</p>
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl md:rounded-2xl shadow-xl p-8 md:p-12 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 md:h-16 md:w-16 border-4 border-blue-500 border-t-transparent mx-auto mb-3 md:mb-4"></div>
+            <p className="text-gray-600 text-base md:text-lg font-medium">Memuat jadwal...</p>
           </div>
         ) : !jadwalData ? (
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-12 text-center border border-white/20">
-            <div className="w-20 h-20 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl md:rounded-2xl shadow-xl p-6 md:p-8 lg:p-12 text-center border border-white/20">
+            <div className="w-14 h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6">
+              <svg className="w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-3">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2 md:mb-3">
               Belum Ada Jadwal
             </h2>
-            <p className="text-gray-600 text-lg mb-8 max-w-md mx-auto">
+            <p className="text-gray-600 text-sm md:text-base lg:text-lg mb-6 md:mb-8 max-w-md mx-auto px-2">
               Kelas ini belum memiliki jadwal pelajaran. Mulai buat jadwal untuk mengatur mata pelajaran dan waktu belajar.
             </p>
             <button
               onClick={handleCreateNew}
-              className="px-8 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold"
+              className="px-6 py-2 md:px-8 md:py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg md:rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold text-sm md:text-base"
               >
               Buat Jadwal Baru
             </button>
           </div>
         ) : (
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden border border-white/20">
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl md:rounded-2xl shadow-xl overflow-hidden border border-white/20">
             {/* Jadwal Info */}
             {jadwalData.jadwal.nama && (
-              <div className="bg-gradient-to-r from-blue-500 to-indigo-600 px-8 py-6">
-                <h2 className="text-2xl font-bold text-white">
+              <div className="bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-4 md:px-6 md:py-5 lg:px-8 lg:py-6">
+                <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-white">
                   {jadwalData.jadwal.nama}
                 </h2>
-                <p className="text-blue-100 mt-1">Jadwal Pelajaran Kelas {selectedKelas.kelas.nama}</p>
+                <p className="text-blue-100 mt-1 text-xs md:text-sm">Jadwal Pelajaran Kelas {selectedKelas.kelas.nama}</p>
               </div>
             )}
 
             {/* Jadwal Grid */}
-            <div className="p-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+            <div className="p-4 md:p-6 lg:p-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 md:gap-6">
                 {HARI_OPTIONS.map(({ value, label }) => {
                     const slotsForDay = jadwalData.slots_by_hari[value] || [];
                     
                   return (
-                    <div key={value} className="bg-white rounded-xl shadow-lg border border-gray-200/50 overflow-hidden hover:shadow-xl transition-all duration-300">
+                    <div key={value} className="bg-white rounded-lg md:rounded-xl shadow-lg border border-gray-200/50 overflow-hidden hover:shadow-xl transition-all duration-300">
                       {/* Header Hari */}
-                      <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-4 text-center">
-                        <h3 className="font-bold text-lg">{label}</h3>
+                      <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-3 py-3 md:px-4 md:py-4 text-center">
+                        <h3 className="font-bold text-base md:text-lg">{label}</h3>
                       </div>
 
                       {/* Slots */}
-                      <div className="p-4 space-y-3 min-h-[400px]">
+                      <div className="p-3 md:p-4 space-y-2 md:space-y-3 min-h-[300px] md:min-h-[350px] lg:min-h-[400px]">
                         {slotsForDay.length === 0 ? (
-                          <div className="text-center py-8 text-gray-400">
-                            <svg className="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="text-center py-6 md:py-8 text-gray-400">
+                            <svg className="w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 mx-auto mb-2 md:mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            <p className="text-sm font-medium">Tidak ada jadwal</p>
+                            <p className="text-xs md:text-sm font-medium">Tidak ada jadwal</p>
                           </div>
                         ) : (
                             slotsForDay.map((slot) => (
                                 <div
                                 key={slot.id}
-                                className={`rounded-xl p-4 transition-all duration-200 hover:transform hover:-translate-y-0.5 ${getSlotColor(
+                                className={`rounded-lg md:rounded-xl p-3 md:p-4 transition-all duration-200 hover:transform hover:-translate-y-0.5 ${getSlotColor(
                                     slot.tipe_slot
                                 )}`}
                                 style={{
@@ -420,7 +420,7 @@ const JadwalDashboard = () => {
                                 }}
                             >
                               {/* Jam */}
-                              <div className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                              <div className="text-xs font-semibold text-gray-700 mb-1.5 md:mb-2 flex items-center gap-1">
                                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
@@ -430,21 +430,21 @@ const JadwalDashboard = () => {
                               {/* Content */}
                               {slot.tipe_slot === "pelajaran" ? (
                                 <div>
-                                  <div className="font-bold text-gray-900 text-sm leading-tight">
+                                  <div className="font-bold text-gray-900 text-xs md:text-sm leading-tight">
                                     {slot.mapel?.nama || "Mapel tidak ditemukan"}
                                   </div>
                                   {slot.mapel?.kode && (
-                                    <div className="text-xs text-gray-500 mt-2 bg-white/50 rounded-lg px-2 py-1 inline-block">
+                                    <div className="text-xs text-gray-500 mt-1.5 md:mt-2 bg-white/50 rounded px-1.5 py-0.5 md:px-2 md:py-1 inline-block">
                                       {slot.mapel.kode}
                                     </div>
                                   )}
                                 </div>
                               ) : (
                                 <div>
-                                  <div className="font-semibold text-gray-700 text-sm">
+                                  <div className="font-semibold text-gray-700 text-xs md:text-sm">
                                     {slot.keterangan}
                                   </div>
-                                  <div className="text-xs text-gray-500 mt-2">
+                                  <div className="text-xs text-gray-500 mt-1.5 md:mt-2">
                                     {slot.durasi_menit} menit
                                   </div>
                                 </div>
@@ -460,12 +460,12 @@ const JadwalDashboard = () => {
             </div>
 
             {/* Print Button */}
-            <div className="px-8 py-6 bg-gradient-to-r from-gray-50 to-slate-50 border-t border-gray-200/50 flex justify-end">
+            <div className="px-4 py-4 md:px-6 md:py-5 lg:px-8 lg:py-6 bg-gradient-to-r from-gray-50 to-slate-50 border-t border-gray-200/50 flex justify-end">
               <button
                 onClick={handlePrint}
-                className="px-6 py-3 bg-white text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 shadow-lg hover:shadow-xl border border-gray-200/50 hover:border-gray-300 font-semibold flex items-center gap-2"
+                className="px-4 py-2 md:px-6 md:py-3 bg-white text-gray-700 rounded-lg md:rounded-xl hover:bg-gray-50 transition-all duration-200 shadow-lg hover:shadow-xl border border-gray-200/50 hover:border-gray-300 font-semibold flex items-center gap-1.5 md:gap-2 text-sm md:text-base w-full md:w-auto justify-center"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                 </svg>
                 Cetak Jadwal
@@ -476,28 +476,27 @@ const JadwalDashboard = () => {
 
         {/* Print Modal */}
         {showPrintModal && jadwalData && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-7xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-white/20">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-2 md:p-4 lg:p-6">
+            <div className="bg-white rounded-xl md:rounded-2xl shadow-2xl max-w-7xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-white/20">
               {/* Modal Header */}
-              <div className="px-8 py-6 border-b border-gray-200/50 flex items-center justify-between bg-gradient-to-r from-gray-50 to-slate-50">
+              <div className="px-4 py-4 md:px-6 md:py-5 lg:px-8 lg:py-6 border-b border-gray-200/50 flex items-center justify-between bg-gradient-to-r from-gray-50 to-slate-50">
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900">Preview Cetak Jadwal</h3>
-                  <p className="text-gray-600 mt-1">Pastikan jadwal sudah benar sebelum mencetak</p>
+                  <h3 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">Preview Cetak Jadwal</h3>
+                  <p className="text-gray-600 mt-1 text-xs md:text-sm">Pastikan jadwal sudah benar sebelum mencetak</p>
                 </div>
                 <button
                   onClick={() => setShowPrintModal(false)}
-                  className="text-gray-500 hover:text-gray-700 p-2 hover:bg-gray-200 rounded-xl transition-all duration-200"
+                  className="text-gray-500 hover:text-gray-700 p-1.5 md:p-2 hover:bg-gray-200 rounded-lg md:rounded-xl transition-all duration-200"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
 
               {/* Modal Body - Scrollable */}
-              <div className="flex-1 overflow-auto p-8 bg-gradient-to-br from-slate-50 to-blue-50/30">
-                <div className="bg-white shadow-2xl rounded-2xl overflow-hidden">
-                
+              <div className="flex-1 overflow-auto p-4 md:p-6 lg:p-8 bg-gradient-to-br from-slate-50 to-blue-50/30">
+                <div className="bg-white shadow-xl md:shadow-2xl rounded-xl md:rounded-2xl overflow-hidden">
                   <JadwalPrintView
                     jadwalData={jadwalData}
                     kelasNama={selectedKelas?.kelas?.nama}
@@ -506,18 +505,18 @@ const JadwalDashboard = () => {
               </div>
 
               {/* Modal Footer */}
-              <div className="px-8 py-6 border-t border-gray-200/50 bg-gradient-to-r from-gray-50 to-slate-50 flex justify-end gap-4">
+              <div className="px-4 py-4 md:px-6 md:py-5 lg:px-8 lg:py-6 border-t border-gray-200/50 bg-gradient-to-r from-gray-50 to-slate-50 flex flex-col sm:flex-row justify-end gap-3 md:gap-4">
                 <button
                   onClick={() => setShowPrintModal(false)}
-                  className="px-8 py-3 bg-white text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 shadow-lg hover:shadow-xl border border-gray-200/50 hover:border-gray-300 font-semibold"
+                  className="px-4 py-2 md:px-6 md:py-3 lg:px-8 lg:py-3 bg-white text-gray-700 rounded-lg md:rounded-xl hover:bg-gray-50 transition-all duration-200 shadow-lg hover:shadow-xl border border-gray-200/50 hover:border-gray-300 font-semibold text-sm md:text-base w-full sm:w-auto"
                   >
                   Tutup Preview
                 </button>
                 <button
                   onClick={handleActualPrint}
-                  className="px-8 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold flex items-center gap-2"
+                  className="px-4 py-2 md:px-6 md:py-3 lg:px-8 lg:py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg md:rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold flex items-center justify-center gap-1.5 md:gap-2 text-sm md:text-base w-full sm:w-auto"
                   >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                   </svg>
                   Cetak Sekarang

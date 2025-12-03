@@ -110,6 +110,7 @@ export default function SiswaLayout({ children }) {
   const userClass = user?.kelas_saat_ini ?? "Siswa";
 
   return (
+    <div className="no-print"> 
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
       {/* Modern Navbar dengan Warna Biru Tua Keunguan */}
       <nav className={`sticky top-0 z-50 transition-all duration-300 ${
@@ -307,6 +308,7 @@ export default function SiswaLayout({ children }) {
         onClose={() => setShowPasswordModal(false)}
         onSuccess={handleChangePassword}
       />
+    </div>
     </div>
   );
 }

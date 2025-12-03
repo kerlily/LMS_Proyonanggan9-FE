@@ -1,15 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { getNilaiMe, getKetidakhadiranMe, getNilaiSikapMe, changePassword, logoutSiswa } from "../../_services/siswa";
+import { getNilaiMe, getKetidakhadiranMe, getNilaiSikapMe, logoutSiswa } from "../../_services/siswa";
 import SiswaLayout from "../../components/layout/SiswaLayout";
-
-/**
- * StudentDashboard (tabel per Tahun Ajaran)
- * - One table per year (oldest -> newest)
- * - Columns: No | Mata Pelajaran | Semester... | Rata-rata
- * - Color-coded value badges: <40 red, <60 yellow, >=60 green
- * - Added: Ketidakhadiran and Nilai Sikap sections per semester
- */
 
 function valueBadge(val) {
   // returns tailwind classes and formatted string
@@ -19,7 +11,7 @@ function valueBadge(val) {
   const n = Number(val);
   if (Number.isNaN(n)) return { cls: "text-gray-400 bg-gray-100", text: "-" };
 
-  if (n < 40) return { cls: "text-red-700 bg-red-100", text: String(n) };
+  if (n < 40) return { cls: "text-red-700 bg-red-100", text: String(n) }; 
   if (n < 60) return { cls: "text-yellow-800 bg-yellow-100", text: String(n) };
   return { cls: "text-green-800 bg-green-100", text: String(n) };
 }
@@ -40,8 +32,6 @@ export default function StudentDashboard() {
   const [ketidakhadiranData, setKetidakhadiranData] = useState(null);
   const [nilaiSikapData, setNilaiSikapData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [newPassword, setNewPassword] = useState("");
-  const [msg, setMsg] = useState(null);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
@@ -94,22 +84,7 @@ export default function StudentDashboard() {
     return () => (mounted = false);
   }, [navigate]);
 
-  const handleChangePassword = async () => {
-    setMsg(null);
-    if (!newPassword) return setMsg("Isi password baru");
-    try {
-      await changePassword({ password: newPassword });
-      setMsg("Password berhasil diubah");
-      setNewPassword("");
-    } catch (err) {
-      setMsg(err?.response?.data?.message || "Gagal ganti password");
-    }
-  };
 
-  const handleLogout = async () => {
-    await logoutSiswa();
-    navigate("/siswa/login");
-  };
 
   if (loading) return <div>
     <SiswaLayout>
@@ -228,29 +203,20 @@ export default function StudentDashboard() {
   return (
     <SiswaLayout>
 
-    
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       {/* Header */}
       <div className="bg-white rounded shadow p-4 flex items-center justify-between">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">Dashboard Siswa</h1>
-          {nilaiData.siswa && (
-            <p className="text-sm text-gray-600 mt-1">
-              {nilaiData.siswa.nama}{" "}
-              {nilaiData.siswa.kelas_id
-                ? `— Kelas ID: ${nilaiData.siswa.kelas_id}`
-                : ""}
-            </p>
-          )}
+          <h2 className="text-xl md:text-2xl  text-gray-800 flex items-center gap-2">
+          Selamat datang,
+          <span className="font-bold text-blue-700">
+            {nilaiData.siswa?.nama || "Siswa"}
+          </span>
+          <span className="text-3xl">👋</span>
+        </h2>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleLogout}
-            className="px-3 py-1 text-sm border rounded text-red-600"
-          >
-            Logout
-          </button>
-        </div>
+       
       </div>
 
       {/* Tahun ajaran tables */}
@@ -497,26 +463,7 @@ export default function StudentDashboard() {
         })()}
       </div>
 
-      {/* Change Password */}
-      <div className="mt-2 bg-white p-4 rounded shadow">
-        <h3 className="font-semibold mb-2">Ganti Password</h3>
-        <div className="flex gap-2">
-          <input
-            type="password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            placeholder="Password baru"
-            className="rounded border px-3 py-2 flex-1"
-          />
-          <button
-            onClick={handleChangePassword}
-            className="px-3 py-2 bg-green-600 text-white rounded"
-          >
-            Ubah
-          </button>
-        </div>
-        {msg && <div className="mt-2 text-sm">{msg}</div>}
-      </div>
+      
     </div>
   </SiswaLayout>
   );

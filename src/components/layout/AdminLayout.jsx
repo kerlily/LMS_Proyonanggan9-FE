@@ -16,6 +16,7 @@ import {
   BookImage,
   Newspaper,
   ChevronDown,
+  ChevronRight,
   Settings,
 } from "lucide-react";
 import { logout as serviceLogout } from "../../_services/auth";
@@ -29,6 +30,7 @@ export default function AdminLayout({ children }) {
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [mobileOpenDropdown, setMobileOpenDropdown] = useState(null);
 
   // Use ref to store user data to avoid triggering re-renders
   const [userState, setUserState] = useState(() => {
@@ -45,6 +47,7 @@ export default function AdminLayout({ children }) {
   const navigate = useNavigate();
   const updateInProgressRef = useRef(false);
   const dropdownRef = useRef(null);
+  const mobileMenuRef = useRef(null);
 
   // Handle scroll effect for navbar
   useEffect(() => {
@@ -62,6 +65,9 @@ export default function AdminLayout({ children }) {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setOpenDropdown(null);
+      }
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
+        setMobileOpenDropdown(null);
       }
     };
 
@@ -132,19 +138,6 @@ export default function AdminLayout({ children }) {
     { icon: Logs, label: "Logs", to: "/admin/logs" },
   ];
 
-  // Menu flat untuk mobile (tetap seperti sebelumnya)
-  const flatMenu = [
-    { icon: Home, label: "Overview", to: "/admin" },
-    { icon: Users, label: "Siswa", to: "/admin/siswa" },
-    { icon: GraduationCap, label: "Guru", to: "/admin/guru" },
-    { icon: User, label: "Admin", to: "/admin/admins" },
-    { icon: BookOpen, label: "Mapel", to: "/admin/mapel" },
-    { icon: Calendar, label: "Tahun Ajaran", to: "/admin/tahun-ajaran" },
-    { icon: Logs, label: "Logs", to: "/admin/logs" },
-    { icon: BookImage, label: "Galeri", to: "/admin/gallery" },
-    { icon: Newspaper, label: "Berita", to: "/admin/berita" },
-  ];
-
   const handleLogout = useCallback(async () => {
     try {
       await serviceLogout();
@@ -175,12 +168,14 @@ export default function AdminLayout({ children }) {
     setProfileModalOpen(true);
     setProfileDropdownOpen(false);
     setMobileMenuOpen(false);
+    setMobileOpenDropdown(null);
   }, []);
 
   const openPasswordModal = useCallback(() => {
     setPasswordModalOpen(true);
     setProfileDropdownOpen(false);
     setMobileMenuOpen(false);
+    setMobileOpenDropdown(null);
   }, []);
 
   const handleProfileSaved = useCallback(() => {
@@ -202,6 +197,19 @@ export default function AdminLayout({ children }) {
 
   const toggleDropdown = (dropdownName) => {
     setOpenDropdown(openDropdown === dropdownName ? null : dropdownName);
+  };
+
+  const toggleMobileDropdown = (dropdownName) => {
+    setMobileOpenDropdown(mobileOpenDropdown === dropdownName ? null : dropdownName);
+  };
+
+  const handleMobileMenuItemClick = (item) => {
+    if (item.items) {
+      toggleMobileDropdown(item.label);
+    } else {
+      setMobileMenuOpen(false);
+      setMobileOpenDropdown(null);
+    }
   };
 
   const displayName = userState?.nama ?? userState?.name ?? "Admin";
@@ -373,53 +381,124 @@ export default function AdminLayout({ children }) {
           </div>
         </div>
 
-        {/* Mobile Menu (tetap sama seperti sebelumnya) */}
+        {/* Mobile Menu dengan Dropdown Sama seperti Desktop */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-indigo-700 bg-indigo-900/95 backdrop-blur-xl">
+          <div className="md:hidden border-t border-indigo-700 bg-indigo-900/95 backdrop-blur-xl" ref={mobileMenuRef}>
             <div className="px-4 py-3 space-y-1">
-              {flatMenu.map((item) => {
+              {menuItems.map((item) => {
                 const Icon = item.icon;
-                const active = isActive(item.to);
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                      active
-                        ? "bg-indigo-700 text-white shadow-sm border border-indigo-600/50"
-                        : "text-indigo-100 hover:bg-indigo-700/50"
-                    }`}
-                  >
-                    <Icon className={`w-5 h-5 ${active ? "scale-110" : ""}`} />
-                    {item.label}
-                  </Link>
-                );
+                
+                if (item.items) {
+                  // Mobile dropdown menu item
+                  const isActiveDropdown = isDropdownActive(item.items);
+                  const isOpen = mobileOpenDropdown === item.label;
+                  
+                  return (
+                    <div key={item.label}>
+                      <button
+                        onClick={() => handleMobileMenuItemClick(item)}
+                        className={`w-full flex items-center justify-between gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                          isActiveDropdown
+                            ? "bg-indigo-700 text-white shadow-sm border border-indigo-600/50"
+                            : "text-indigo-100 hover:bg-indigo-700/50"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Icon className="w-5 h-5" />
+                          {item.label}
+                        </div>
+                        <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${
+                          isOpen ? 'rotate-90' : ''
+                        }`} />
+                      </button>
+
+                      {isOpen && (
+                        <div className="ml-4 mt-1 space-y-1 pl-3 border-l border-indigo-700/50">
+                          {item.items.map((subItem) => {
+                            const SubIcon = subItem.icon;
+                            const active = isActive(subItem.to);
+                            return (
+                              <Link
+                                key={subItem.to}
+                                to={subItem.to}
+                                onClick={() => {
+                                  setMobileMenuOpen(false);
+                                  setMobileOpenDropdown(null);
+                                }}
+                                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200 ${
+                                  active
+                                    ? "bg-indigo-700/50 text-white"
+                                    : "text-indigo-100 hover:bg-indigo-700/30"
+                                }`}
+                              >
+                                <SubIcon className="w-4 h-4" />
+                                {subItem.label}
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                } else {
+                  // Regular mobile menu item
+                  const active = isActive(item.to);
+                  return (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        setMobileOpenDropdown(null);
+                      }}
+                      className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                        active
+                          ? "bg-indigo-700 text-white shadow-sm border border-indigo-600/50"
+                          : "text-indigo-100 hover:bg-indigo-700/50"
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      {item.label}
+                    </Link>
+                  );
+                }
               })}
 
               <hr className="my-2 border-indigo-700/50" />
 
+              {/* Profile Section for Mobile */}
               <div className="px-3 py-2">
                 <div className="text-xs font-medium text-indigo-300 uppercase tracking-wider mb-2">
                   Akun
                 </div>
+                
+                <div className="flex items-center gap-3 px-3 py-2.5 mb-2">
+                  <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                    {userInitial}
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-white">{displayName}</div>
+                    <div className="text-xs text-indigo-200">Administrator</div>
+                  </div>
+                </div>
+                
                 <button
-                  onClick={() => { setMobileMenuOpen(false); openProfileModal(); }}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-indigo-100 hover:bg-indigo-700/50 w-full text-left transition-colors duration-150"
+                  onClick={openProfileModal}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-indigo-100 hover:bg-indigo-700/50 transition-colors duration-150 text-left"
                 >
                   <User className="w-5 h-5" />
                   Edit Profil
                 </button>
                 <button
-                  onClick={() => { setMobileMenuOpen(false); openPasswordModal(); }}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-indigo-100 hover:bg-indigo-700/50 w-full text-left transition-colors duration-150"
+                  onClick={openPasswordModal}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-indigo-100 hover:bg-indigo-700/50 transition-colors duration-150 text-left"
                 >
                   <Key className="w-5 h-5" />
                   Ubah Password
                 </button>
                 <button
-                  onClick={() => { setMobileMenuOpen(false); handleLogout(); }}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-red-300 hover:bg-red-500/20 w-full text-left transition-colors duration-150 mt-1"
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-red-300 hover:bg-red-500/20 transition-colors duration-150 text-left mt-1"
                 >
                   <LogOut className="w-5 h-5" />
                   Logout

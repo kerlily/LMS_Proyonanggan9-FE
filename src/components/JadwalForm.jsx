@@ -270,8 +270,8 @@ const JadwalForm = ({ kelasId, existingJadwal, onSuccess, onCancel }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold mb-6">
+    <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
+      <h2 className="text-xl md:text-2xl font-bold mb-6">
         {existingJadwal ? "Edit Jadwal" : "Buat Jadwal Baru"}
       </h2>
 
@@ -293,7 +293,7 @@ const JadwalForm = ({ kelasId, existingJadwal, onSuccess, onCancel }) => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Tahun Ajaran
@@ -336,14 +336,14 @@ const JadwalForm = ({ kelasId, existingJadwal, onSuccess, onCancel }) => {
         {/* Tabs Hari */}
         <div className="mb-6">
           <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-2 overflow-x-auto">
+            <nav className="-mb-px flex space-x-1 md:space-x-2 overflow-x-auto">
               {HARI_OPTIONS.map(({ value, label }) => (
                 <button
                   key={value}
                   type="button"
                   onClick={() => setActiveHari(value)}
                   className={`
-                    py-2 px-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap
+                    py-2 px-3 md:px-4 text-xs md:text-sm font-medium border-b-2 transition-colors whitespace-nowrap
                     ${
                       activeHari === value
                         ? "border-blue-500 text-blue-600"
@@ -353,7 +353,7 @@ const JadwalForm = ({ kelasId, existingJadwal, onSuccess, onCancel }) => {
                 >
                   {label}
                   {slotsByHari[value].length > 0 && (
-                    <span className="ml-2 bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">
+                    <span className="ml-1 md:ml-2 bg-blue-100 text-blue-800 text-xs px-1.5 py-0.5 rounded-full">
                       {slotsByHari[value].length}
                     </span>
                   )}
@@ -365,12 +365,12 @@ const JadwalForm = ({ kelasId, existingJadwal, onSuccess, onCancel }) => {
 
         {/* Slots for Active Hari */}
         <div className="mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 gap-3">
+            <h3 className="text-base md:text-lg font-semibold">
               Jadwal {activeHari.charAt(0).toUpperCase() + activeHari.slice(1)}
             </h3>
 
-            <div className="flex gap-2">
+            <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
               {/* Copy from other day */}
               <select
                 onChange={(e) => {
@@ -394,7 +394,7 @@ const JadwalForm = ({ kelasId, existingJadwal, onSuccess, onCancel }) => {
               <button
                 type="button"
                 onClick={() => addSlot(activeHari)}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm md:text-base"
               >
                 + Tambah Slot
               </button>
@@ -402,7 +402,7 @@ const JadwalForm = ({ kelasId, existingJadwal, onSuccess, onCancel }) => {
           </div>
 
           {slotsByHari[activeHari].length === 0 ? (
-            <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+            <div className="text-center py-8 md:py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
               <p className="text-gray-500 mb-4">
                 Belum ada jadwal untuk hari ini
               </p>
@@ -425,17 +425,17 @@ const JadwalForm = ({ kelasId, existingJadwal, onSuccess, onCancel }) => {
                 return (
                   <div
                     key={slot.id}
-                    className="border border-gray-300 rounded-lg p-4 bg-gray-50"
+                    className="border border-gray-300 rounded-lg p-3 md:p-4 bg-gray-50"
                   >
-                    <div className="flex items-start gap-4">
+                    <div className="flex items-start gap-3 md:gap-4">
                       {/* Urutan */}
-                      <div className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">
+                      <div className="flex-shrink-0 w-6 h-6 md:w-8 md:h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold text-xs md:text-base">
                         {index + 1}
                       </div>
 
-                      <div className="flex-1 space-y-3">
+                      <div className="flex-1 space-y-2 md:space-y-3">
                         {/* Jam */}
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
                           <div>
                             <label className="block text-xs font-medium text-gray-700 mb-1">
                               Jam Mulai
@@ -563,11 +563,11 @@ const JadwalForm = ({ kelasId, existingJadwal, onSuccess, onCancel }) => {
                       <button
                         type="button"
                         onClick={() => deleteSlot(activeHari, index)}
-                        className="flex-shrink-0 p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        className="flex-shrink-0 p-1 md:p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         title="Hapus Slot"
                       >
                         <svg
-                          className="w-5 h-5"
+                          className="w-4 h-4 md:w-5 md:h-5"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -589,12 +589,12 @@ const JadwalForm = ({ kelasId, existingJadwal, onSuccess, onCancel }) => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-end gap-3 pt-6 border-t">
+        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t">
           {onCancel && (
             <button
               type="button"
               onClick={onCancel}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors w-full sm:w-auto"
               disabled={loading}
             >
               Batal
@@ -603,7 +603,7 @@ const JadwalForm = ({ kelasId, existingJadwal, onSuccess, onCancel }) => {
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed w-full sm:w-auto"
           >
             {loading
               ? "Menyimpan..."

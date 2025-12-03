@@ -1,21 +1,78 @@
 // src/pages/siswa/SiswaJadwal.jsx
 import React, { useState, useEffect } from "react";
-import { Calendar, Clock } from "lucide-react";
+import { Calendar, Clock, Printer } from "lucide-react";
 import SiswaLayout from "../../components/layout/SiswaLayout";
 import api from "../../_api";
 
 const HARI_OPTIONS = [
-  { value: "senin", label: "Senin" },
-  { value: "selasa", label: "Selasa" },
-  { value: "rabu", label: "Rabu" },
-  { value: "kamis", label: "Kamis" },
-  { value: "jumat", label: "Jumat" },
-  { value: "sabtu", label: "Sabtu" },
+  { value: "senin", label: "SENIN" },
+  { value: "selasa", label: "SELASA" },
+  { value: "rabu", label: "RABU" },
+  { value: "kamis", label: "KAMIS" },
+  { value: "jumat", label: "JUMAT" },
+  { value: "sabtu", label: "SABTU" },
 ];
+
+function generateTimeSlots(jadwalData) {
+  const all = new Set();
+  const result = [];
+
+  Object.keys(jadwalData.slots_by_hari || {}).forEach((hari) => {
+    (jadwalData.slots_by_hari[hari] || []).forEach((s) => {
+      if (s.jam_mulai) all.add(s.jam_mulai);
+      if (s.jam_selesai) all.add(s.jam_selesai);
+    });
+  });
+
+  const sorted = [...all].sort();
+  if (sorted.length < 2) return [];
+
+  const ranges = [];
+  for (let i = 0; i < sorted.length - 1; i++) {
+    ranges.push({
+      start: sorted[i],
+      end: sorted[i + 1],
+      display: `${sorted[i]} - ${sorted[i + 1]}`,
+    });
+  }
+
+  ranges.forEach((r) => {
+    const row = { time: r.display, slots: {} };
+
+    HARI_OPTIONS.forEach(({ value: hari }) => {
+      const slots = jadwalData.slots_by_hari?.[hari] || [];
+      const found = slots.find(
+        (s) => s.jam_mulai <= r.start && s.jam_selesai > r.start
+      );
+
+      if (found) {
+        const rowspan = ranges.filter(
+          (x) => x.start >= found.jam_mulai && x.end <= found.jam_selesai
+        ).length;
+
+        row.slots[hari] = {
+          ...found,
+          rowspan,
+          hide: r.start !== found.jam_mulai,
+        };
+      }
+    });
+
+    result.push(row);
+  });
+
+  return result;
+}
+
+function formatTime(t) {
+  if (!t) return "-";
+  return String(t).slice(0, 5);
+}
 
 export default function SiswaJadwal() {
   const [loading, setLoading] = useState(true);
   const [jadwalData, setJadwalData] = useState(null);
+  const [kelasNama, setKelasNama] = useState("");
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -27,7 +84,6 @@ export default function SiswaJadwal() {
       setLoading(true);
       setError(null);
 
-      // Get user info from localStorage
       const raw = localStorage.getItem("userInfo") || localStorage.getItem("user");
       const user = raw ? JSON.parse(raw) : null;
 
@@ -36,143 +92,197 @@ export default function SiswaJadwal() {
         return;
       }
 
-      // Fetch jadwal for this kelas
       const response = await api.get(`/kelas/${user.kelas_id}/jadwal`);
       setJadwalData(response.data);
+      setKelasNama(user.kelas_nama || "");
     } catch (err) {
-      console.error("Error fetching jadwal:", err);
-      if (err?.response?.status === 404) {
-        setError("Jadwal belum tersedia untuk kelas Anda");
-      } else {
-        setError("Gagal memuat jadwal");
-      }
+      console.error(err);
+      setError("Gagal memuat jadwal");
     } finally {
       setLoading(false);
     }
   };
 
-  const getSlotColor = (tipeSlot) => {
-    return tipeSlot === "pelajaran"
-      ? "bg-purple-50 border-l-4 border-purple-400"
-      : "bg-gray-50 border-l-4 border-gray-300";
+  // PRINT — open new window that contains only the table (so SiswaLayout not printed)
+  const handlePrint = () => {
+    if (!jadwalData) return;
+
+    const rows = generateTimeSlots(jadwalData);
+    const title = "Jadwal Pelajaran";
+    const semNama = jadwalData.jadwal?.nama ?? "";
+    const tahunNama = jadwalData.jadwal?.tahun_ajaran?.nama ?? "";
+    const semText = jadwalData.jadwal?.semester?.nama
+      ? `Semester ${jadwalData.jadwal.semester.nama}`
+      : "";
+
+    // CSS for print window: header blue, table borders blue, cells white
+    const style = `
+      body { font-family: Arial, sans-serif; padding:20px; color:#0f172a; }
+      .header { text-align:center; margin-bottom:18px; }
+      .title { font-size:20px; font-weight:700; }
+      .meta { margin-top:6px; font-size:13px; color:#334155; }
+      table { width:100%; border-collapse:collapse; margin-top:10px; }
+      th, td { border:1px solid #1e40af; padding:8px; font-size:13px; vertical-align:middle; }
+      thead th { background:#bfdbfe; color:#1e3a8a; font-weight:700; text-align:center; }
+      .time { background:#bfdbfe; font-weight:700; text-align:center; color:#1e3a8a; width:120px; }
+      td { background: #ffffff; color:#0f172a; }
+      @media print {
+        body { padding:12mm; }
+      }
+    `;
+
+    // build table HTML
+    let tableHtml = `<table><thead><tr><th class="time">Jam</th>`;
+    HARI_OPTIONS.forEach((h) => {
+      tableHtml += `<th>${h.label}</th>`;
+    });
+    tableHtml += `</tr></thead><tbody>`;
+
+    rows.forEach((r) => {
+      tableHtml += `<tr>`;
+      tableHtml += `<td class="time">${r.time}</td>`;
+
+      HARI_OPTIONS.forEach((h) => {
+        const d = r.slots[h.value];
+        if (!d) {
+          tableHtml += `<td></td>`;
+        } else if (!d.hide) {
+          const rowspanAttr = d.rowspan > 1 ? `rowspan="${d.rowspan}"` : "";
+          const name =
+            d.tipe_slot === "pelajaran"
+              ? d.mapel?.nama || "-"
+              : d.keterangan || "-";
+
+          const kode = d.mapel?.kode
+            ? `<div style="font-size:11px;color:#334155;margin-top:4px">(${d.mapel.kode})</div>`
+            : "";
+
+          tableHtml += `<td ${rowspanAttr}><div style="font-weight:600">${name}${kode}</div></td>`;
+        }
+      });
+
+      tableHtml += `</tr>`;
+    });
+
+    tableHtml += `</tbody></table>`;
+
+    const html = `
+      <html>
+        <head><title>${title}</title><style>${style}</style></head>
+        <body>
+          <div class="header">
+            <div class="title">${title}</div>
+            <div class="meta">${kelasNama}</div>
+            <div class="meta">${semNama} · ${tahunNama} · ${semText}</div>
+          </div>
+          ${tableHtml}
+        </body>
+      </html>
+    `;
+
+    const w = window.open("", "_blank", "width=900,height=700");
+    if (!w) {
+      alert("Popup diblokir — izinkan popup lalu coba lagi.");
+      return;
+    }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+    setTimeout(() => w.print(), 350);
   };
 
-  if (loading) {
+  if (loading)
     return (
       <SiswaLayout>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600 mx-auto mb-3"></div>
-            <p className="text-gray-600 text-sm">Memuat jadwal...</p>
-          </div>
-        </div>
+        <div className="text-center py-20">Memuat jadwal...</div>
       </SiswaLayout>
     );
-  }
 
-  if (error) {
+  if (error)
     return (
       <SiswaLayout>
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Calendar className="w-8 h-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              {error}
-            </h3>
-            <p className="text-sm text-gray-600">
-              Hubungi guru atau admin untuk informasi lebih lanjut
-            </p>
-          </div>
+        <div className="bg-white rounded-lg p-6 text-center shadow">
+          <p className="text-gray-600">{error}</p>
         </div>
       </SiswaLayout>
     );
-  }
-
-  if (!jadwalData) {
-    return (
-      <SiswaLayout>
-        <div className="bg-white rounded-lg shadow-sm p-6 text-center text-gray-500">
-          Tidak ada data jadwal
-        </div>
-      </SiswaLayout>
-    );
-  }
 
   return (
     <SiswaLayout>
       <div className="space-y-4">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm p-4">
+        <div className="bg-white rounded-lg shadow-sm p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-              <Calendar className="w-5 h-5 text-purple-600" />
+            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Calendar className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Jadwal Pelajaran</h2>
-              {jadwalData.jadwal?.nama && (
-                <p className="text-sm text-gray-600">{jadwalData.jadwal.nama}</p>
-              )}
+              <h2 className="text-lg font-bold">Jadwal Pelajaran</h2>
+              <p className="text-sm text-gray-600">{kelasNama}</p>
             </div>
           </div>
+
+          <button
+            onClick={handlePrint}
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          >
+            <Printer size={16} />
+            Cetak
+          </button>
         </div>
 
-        {/* Jadwal Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {/* Cards per hari: header hari with blue bg only; list area white */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {HARI_OPTIONS.map(({ value, label }) => {
-            const slotsForDay = jadwalData.slots_by_hari?.[value] || [];
-
+            const slots = jadwalData.slots_by_hari?.[value] || [];
             return (
-              <div key={value} className="bg-white rounded-lg shadow-sm overflow-hidden">
-                {/* Header Hari */}
-                <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 py-2 text-center">
-                  <h3 className="font-bold text-sm">{label}</h3>
+              <div key={value} className="bg-white rounded-xl shadow p-0 overflow-hidden">
+                {/* Day header: blue background only */}
+                <div className="px-4 py-2 bg-blue-100 text-blue-800 font-semibold text-sm">
+                  {label}
                 </div>
 
-                {/* Slots */}
-                <div className="p-3 space-y-2 min-h-[200px]">
-                  {slotsForDay.length === 0 ? (
-                    <div className="text-center py-6 text-xs text-gray-400">
-                      <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p>Tidak ada jadwal</p>
-                    </div>
+                {/* White card content */}
+                <div className="p-4 bg-white">
+                  {slots.length === 0 ? (
+                    <div className="text-gray-400 text-sm">Tidak ada jadwal</div>
                   ) : (
-                    slotsForDay.map((slot) => (
-                      <div
-                        key={slot.id}
-                        className={`rounded-lg p-2 ${getSlotColor(slot.tipe_slot)} border`}
-                      >
-                        {/* Jam */}
-                        <div className="flex items-center gap-1 text-[10px] text-gray-600 mb-1">
-                          <Clock className="w-3 h-3" />
-                          {slot.jam_mulai} - {slot.jam_selesai}
-                        </div>
-
-                        {/* Content */}
-                        {slot.tipe_slot === "pelajaran" ? (
-                          <div>
-                            <div className="font-bold text-gray-900 text-xs">
-                              {slot.mapel?.nama || "Mata Pelajaran"}
+                    <div className="space-y-2">
+                      {slots.map((slot, idx) => (
+                        <div
+                          key={slot.id || idx}
+                          className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 bg-white"
+                        >
+                          <div className="w-24 flex-shrink-0 text-center">
+                            <div className="text-xs text-gray-600 flex items-center justify-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              <span>Jam</span>
                             </div>
+
+                            <div className="mt-1 font-bold text-sm text-blue-800">
+                              {formatTime(slot.jam_mulai)}
+                              <span className="block text-[12px] text-gray-600 font-medium">
+                                — {formatTime(slot.jam_selesai)}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex-1">
+                            <div className="text-sm font-semibold text-gray-900">
+                              {slot.tipe_slot === "pelajaran"
+                                ? slot.mapel?.nama || "-"
+                                : slot.keterangan || "-"}
+                            </div>
+
                             {slot.mapel?.kode && (
-                              <div className="text-[10px] text-gray-500 mt-0.5">
-                                ({slot.mapel.kode})
+                              <div className="text-[12px] text-gray-500 mt-1">
+                                {slot.mapel.kode}
                               </div>
                             )}
                           </div>
-                        ) : (
-                          <div>
-                            <div className="font-semibold text-gray-700 text-xs">
-                              {slot.keterangan}
-                            </div>
-                            <div className="text-[10px] text-gray-500">
-                              {slot.durasi_menit} menit
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>

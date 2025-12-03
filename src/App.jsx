@@ -44,7 +44,6 @@ import StrukturNilai from "./pages/guru/hitung_nilai/StrukturNilai";
 
 import NilaiSikapAbsensiDashboard from "./pages/guru/hitung_nilai/NilaiSikapAbsensiDashboard";
 
-import TestNilaiForm from "./test/TestNilaiForm/TestNilaiForm";
 import BeritaDashboard from "./pages/guru/berita/BeritaDashboard";
 import GalleryDashboard from "./pages/guru/berita/GalleryDashboard";
 import BeritaDashboardAdmin from "./pages/admin/Berita/BeritaDashboard";
@@ -58,7 +57,7 @@ import SiswaJadwal from "./pages/public/SiswaJadwal";
 export default function App() {
   const location = useLocation();
   // routes or prefixes that should render without the centered max width wrapper
-  const fullWidthPrefixes = ["/siswa/login", "/admin", "/guru"];
+  const fullWidthPrefixes = ["/siswa", "/admin", "/guru"];
   // use prefix matching so all /admin routes (like /admin/siswa) become full-width
   const isFull = fullWidthPrefixes.some((p) => location.pathname.startsWith(p));
 
@@ -415,15 +414,6 @@ export default function App() {
               element={
                 <RoleProtectedRoute allowed={["guru"]}>
                   <GalleryDashboard />
-                </RoleProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/test"
-              element={
-                <RoleProtectedRoute allowed={["guru"]}>
-                  <TestNilaiForm />
                 </RoleProtectedRoute>
               }
             />

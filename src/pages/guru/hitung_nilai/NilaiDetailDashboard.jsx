@@ -78,12 +78,10 @@ export default function NilaiDetailDashboard() {
       
       const resYear = await api.get("/tahun-ajaran/active");
       const yearData = resYear.data?.data || resYear.data;
-      console.log("📅 Tahun Ajaran:", yearData);
       setTahunAjaran(yearData);
       
       const resWali = await showByGuru(yearData?.id);
       const data = resWali.data || [];
-      console.log("👨‍🏫 Wali Kelas Assignments:", data);
       setAssignments(data);
       
       if (data.length === 1) {
@@ -94,7 +92,6 @@ export default function NilaiDetailDashboard() {
       if (yearData?.id) {
         const resSem = await getSemesterByTahunAjaran(yearData.id);
         const semList = resSem.data?.data ?? resSem.data ?? [];
-        console.log("📚 Semesters:", semList);
         setSemesters(Array.isArray(semList) ? semList : []);
         
         const activeSem = semList.find(s => s.is_active);
@@ -112,7 +109,6 @@ export default function NilaiDetailDashboard() {
 
   const onSelectAssignment = (id) => {
     const a = assignments.find((x) => x.id === Number(id));
-    console.log("🎯 Selected Assignment:", a);
     setSelectedAssignment(a || null);
     setKelasId(a ? a.kelas_id : null);
     resetData();
@@ -120,7 +116,6 @@ export default function NilaiDetailDashboard() {
 
   const onSelectSemester = (id) => {
     const sem = semesters.find(s => s.id === Number(id));
-    console.log("📖 Selected Semester:", sem);
     setSelectedSemester(sem);
     resetData();
   };
@@ -141,14 +136,12 @@ const fetchStruktur = async () => {
   try {
     setLoading(true);
     setError(null);
-    console.log(`🔍 Fetching struktur for kelas: ${kelasId}, semester: ${selectedSemester.id}`);
 
     const res = await getStrukturNilai(kelasId, { semester_id: selectedSemester.id });
     // res may be axios response or already data; handle both
     const payload = res?.data ?? res;
     // payload may be { data: [ ... ] } or array directly
     const list = Array.isArray(payload) ? payload : (payload?.data ?? payload ?? []);
-    console.log("📋 Struktur List:", list);
     setStrukturList(Array.isArray(list) ? list : []);
 
     if (Array.isArray(list) && list.length === 1) {
@@ -166,7 +159,6 @@ const fetchStruktur = async () => {
 
   const onSelectStruktur = (id) => {
     const s = strukturList.find((x) => String(x.id) === String(id));
-    console.log("📝 Selected Struktur:", s);
     setSelectedStruktur(s || null);
     setRows([]);
     setEdited({});
@@ -184,13 +176,10 @@ const fetchStruktur = async () => {
   try {
     setLoading(true);
     setError(null);
-    console.log(`📊 Fetching nilai detail for struktur: ${strukturId}`);
 
     const res = await getNilaiDetail(kelasId, strukturId);
     // res may be axios response: res.data === { struktur: {...}, data: [...] }
     const payload = res?.data ?? res;
-
-    console.log("📊 Raw Response Payload:", payload);
 
     // Extract struktur from payload if present (keamanan: keep server-provided struktur)
     if (payload?.struktur) {
@@ -230,8 +219,6 @@ const fetchStruktur = async () => {
 
     const finalRows = rowsArray.map(normalizeRow);
 
-    console.log("📊 Nilai Detail Rows (normalized):", finalRows);
-    console.log("📊 Sample Row:", finalRows[0]);
 
     setRows(finalRows);
     setEdited({});
@@ -249,7 +236,6 @@ const fetchStruktur = async () => {
     
     try {
       const res = await getProgress(kelasId, selectedStruktur.id);
-      console.log("📈 Progress:", res);
       setProgress(res);
     } catch (err) {
       console.error("❌ fetchProgress error:", err);
@@ -257,13 +243,10 @@ const fetchStruktur = async () => {
   };
 
   const openForm = (row) => {
-    console.log("🖊️ Opening form for row:", row);
-    console.log("🖊️ Selected Struktur:", selectedStruktur);
     setOpenRow(row);
   };
 
   const handleSaveRow = async (saveData) => {
-  console.log("💾 Saving row:", saveData);
   
   try {
     // Update UI langsung
@@ -284,7 +267,6 @@ const fetchStruktur = async () => {
       }]
     };
     
-    console.log("📤 Also saving via bulk:", payload);
     await postNilaiDetailBulk(kelasId, selectedStruktur.id, payload);
     
     setOpenRow(null);
@@ -315,7 +297,6 @@ const handleSaveAll = async () => {
     const edit = edited[Number(r.siswa_id)];
     const nilaiData = edit ? edit : safeParse(r.nilai_data);
 
-    console.log(`💾 Final nilai untuk siswa ${r.siswa_id}:`, nilaiData);
 
     return {
       siswa_id: Number(r.siswa_id),
@@ -323,7 +304,6 @@ const handleSaveAll = async () => {
     };
   });
 
-  console.log("💾 Final BULK payload:", payloadArray);
 
   try {
     setSaving(true);
@@ -342,7 +322,6 @@ const handleSaveAll = async () => {
     fetchNilaiDetail(selectedStruktur.id);
     fetchProgress();
   } catch (err) {
-    console.error("❌ saveBulkNilai error:", err);
     setError(err?.response?.data?.message || "Gagal menyimpan nilai");
   } finally {
     setSaving(false);
@@ -365,13 +344,11 @@ const handleSaveAll = async () => {
       setError(null);
       setGenerateSummary(null);
       const res = await generateNilaiAkhir(kelasId, selectedStruktur.id);
-      console.log("🎯 Generate Response:", res);
       setGenerateSummary(res.summary || null);
       alert("Generate selesai! Lihat ringkasan di bawah.");
       fetchNilaiDetail(selectedStruktur.id);
       fetchProgress();
     } catch (err) {
-      console.error("❌ generateNilaiAkhir error:", err);
       setError(err?.response?.data?.message || "Gagal generate nilai akhir");
     } finally {
       setGenerating(false);

@@ -12,39 +12,31 @@ Modal.setAppElement("#root");
 // Helper function untuk build photo URL
 function buildPhotoUrl(data) {
   if (!data) {
-    console.log("🔍 buildPhotoUrl: No data");
     return null;
   }
 
-  console.log("🔍 buildPhotoUrl input:", JSON.stringify(data, null, 2));
-
   // Priority 1: photo_url exists dan valid
   if (data.photo_url && typeof data.photo_url === 'string' && data.photo_url.length > 0) {
-    console.log("✅ Found photo_url:", data.photo_url);
     return data.photo_url;
   }
 
   // Priority 2: photo path exists
   if (data.photo && typeof data.photo === 'string' && data.photo.length > 0) {
     if (data.photo.startsWith('http')) {
-      console.log("✅ Photo is already full URL:", data.photo);
       return data.photo;
     }
     
     // FIXED: Gunakan API base URL bukan window.location.origin
     const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
     const url = `${baseUrl}/storage/${data.photo}`;
-    console.log("✅ Built photo URL from path:", url);
     return url;
   }
 
   // Priority 3: nested guru object
   if (data.guru && typeof data.guru === 'object') {
-    console.log("🔍 Checking nested guru object");
     return buildPhotoUrl(data.guru);
   }
 
-  console.log("❌ No photo found in data");
   return null;
 }
 
@@ -62,8 +54,6 @@ export default function ProfileModal({ isOpen, onRequestClose, initialUser }) {
 
   useEffect(() => {
     if (isOpen && initialUser) {
-      console.log("🔍 ProfileModal opened with user:", initialUser);
-      
       setForm({
         nama: initialUser?.nama ?? initialUser?.name ?? "",
         email: initialUser?.email ?? "",
@@ -73,7 +63,6 @@ export default function ProfileModal({ isOpen, onRequestClose, initialUser }) {
       
       // Build photo URL dengan helper
       const photoUrl = buildPhotoUrl(initialUser);
-      console.log("🖼️ Setting preview URL:", photoUrl);
       setPreviewUrl(photoUrl);
       setPhotoFile(null);
       setImageError(false);
@@ -96,7 +85,6 @@ export default function ProfileModal({ isOpen, onRequestClose, initialUser }) {
         URL.revokeObjectURL(previewUrl);
       }
       const url = URL.createObjectURL(f);
-      console.log("📸 New photo selected, preview:", url);
       setPreviewUrl(url);
     } else {
       // Reset to original photo
@@ -122,7 +110,6 @@ export default function ProfileModal({ isOpen, onRequestClose, initialUser }) {
     }
 
     setSaving(true);
-    console.log("💾 Saving profile...", form);
     
     try {
       const fd = new FormData();
@@ -131,13 +118,10 @@ export default function ProfileModal({ isOpen, onRequestClose, initialUser }) {
       if (form.no_hp) fd.append("no_hp", form.no_hp);
       if (form.nip) fd.append("nip", form.nip);
       if (photoFile) {
-        console.log("📸 Uploading photo:", photoFile.name);
         fd.append("photo", photoFile);
       }
 
-      console.log("🚀 Sending profile update...");
       const res = await updateMyProfile(fd);
-      console.log("✅ Profile update response:", res.data);
 
       MySwal.fire({ 
         icon: "success", 
@@ -171,9 +155,7 @@ export default function ProfileModal({ isOpen, onRequestClose, initialUser }) {
               ? newUser.photo
               : `${window.location.origin}/storage/${newUser.photo}`;
           }
-          
-          console.log("🖼️ New photo URL:", photoUrl);
-          
+           
           // Merge data - PENTING: preserve photo_url
           const merged = { 
             ...prev, 
@@ -198,13 +180,12 @@ export default function ProfileModal({ isOpen, onRequestClose, initialUser }) {
 
           localStorage.setItem("userInfo", JSON.stringify(merged));
           localStorage.setItem("user", JSON.stringify(merged));
-          console.log("💾 Updated localStorage:", merged);
           
           // Dispatch events untuk update layout
           window.dispatchEvent(new Event('storage'));
           window.dispatchEvent(new Event('userInfoUpdated'));
         } catch (e) {
-          console.error("❌ Error updating localStorage:", e);
+          console.error("Error updating localStorage:", e);
         }
       }
 
@@ -212,13 +193,10 @@ export default function ProfileModal({ isOpen, onRequestClose, initialUser }) {
       
       // Refresh page to show updated data
       setTimeout(() => {
-        console.log("🔄 Reloading page...");
         window.location.reload();
       }, 500);
 
     } catch (err) {
-      console.error("❌ Update profile error:", err);
-      console.error("Error response:", err?.response?.data);
       
       const errorMessage = err?.response?.data?.message || 
                           err?.response?.data?.error ||
@@ -248,7 +226,6 @@ export default function ProfileModal({ isOpen, onRequestClose, initialUser }) {
   }, [previewUrl]);
 
   const handleImageError = () => {
-    console.error("❌ Failed to load image:", previewUrl);
     setImageError(true);
   };
 
