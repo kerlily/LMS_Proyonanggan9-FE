@@ -1,3 +1,4 @@
+
 // src/pages/guru/GuruDashboard.jsx
 import React, { useEffect, useState } from "react";
 import { 
@@ -10,9 +11,7 @@ import {
   BookImage
 } from "lucide-react";
 import GuruLayout from "../../components/layout/GuruLayout";
-import api from "../../_api";
-import { showByGuru, getSemesterByTahunAjaran } from "../../_services/waliKelas";
-import { getSiswaByKelas } from "../../_services/siswa";
+import { showByGuru } from "../../_services/waliKelas";
 
 
 function QuickActionCard({ title, description, buttonText, onClick, icon: Icon, color = "indigo" }) {
@@ -56,13 +55,9 @@ function QuickActionCard({ title, description, buttonText, onClick, icon: Icon, 
 
 export default function GuruDashboard() {
   const [user, setUser] = useState(null);
-  const [tahunAjaran, setTahunAjaran] = useState(null);
   const [assignments, setAssignments] = useState([]);
-  const [activeSemester, setActiveSemester] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [siswaCount, setSiswaCount] = useState({});
-
 
   useEffect(() => {
     const raw = localStorage.getItem("userInfo") || localStorage.getItem("user");
@@ -82,29 +77,9 @@ export default function GuruDashboard() {
       setLoading(true);
       setError(null);
 
-      const resYear = await api.get("/tahun-ajaran/active");
-      const yearData = resYear.data?.data || resYear.data;
-      setTahunAjaran(yearData);
-
-      const resWali = await showByGuru(yearData?.id);
+      const resWali = await showByGuru();
       const assignmentsData = resWali.data || [];
       setAssignments(assignmentsData);
-
-      const siswaCounts = {};
-for (const asg of assignmentsData) {
-  if (asg.kelas_id) {
-    const resSiswa = await getSiswaByKelas(asg.kelas_id);
-    siswaCounts[asg.kelas_id] = resSiswa.data?.length || 0;
-  }
-}
-setSiswaCount(siswaCounts);
-
-      if (yearData?.id) {
-        const resSem = await getSemesterByTahunAjaran(yearData.id);
-        const semList = resSem.data?.data ?? resSem.data ?? [];
-        const activeSem = semList.find(s => s.is_active);
-        setActiveSemester(activeSem);
-      }
 
     } catch (err) {
       console.error("Error fetching dashboard data:", err);
@@ -149,17 +124,39 @@ setSiswaCount(siswaCounts);
             <p className="text-indigo-100 text-lg">Selamat datang kembali di Dashboard Guru</p>
           </div>
 
-          {/* TAHUN AJARAN */}
-          {tahunAjaran && (
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-6 flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-gray-900 mb-1">Tahun Ajaran Aktif</h3>
-                <p className="text-2xl font-bold text-amber-600">{tahunAjaran.nama}</p>
-                {activeSemester && (
-                  <p className="text-sm text-gray-600 mt-1">
-                    Semester: {activeSemester.nama}
-                  </p>
-                )}
+           {/* LIST KELAS */}
+          {assignments.length > 0 && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Kelas yang Anda Ampu</h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {assignments.map((assignment, idx) => (
+                  <div 
+                    key={idx}
+                    className="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer"
+                    onClick={() => goto("/guru/nilai-detail")}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <h3 className="font-semibold text-gray-900">
+                          {assignment.kelas?.nama}
+                        </h3>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {assignment.kelas?.tingkat} • SD Proyonanggan 9
+                        </p>
+                      </div>
+
+                      <div className="bg-indigo-100 p-2 rounded-lg">
+                        <Users className="w-5 h-5 text-indigo-600" />
+                      </div>
+                    </div>
+
+                    {/* ARROW */}
+                    <div className="flex items-center justify-end text-sm">
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -190,7 +187,7 @@ setSiswaCount(siswaCounts);
                 buttonText="Kelola Nilai "
                 onClick={() => goto("/guru/nilai-sikap")}
                 icon={UserStar}
-                color="blue"
+                color="purple"
               />
               <QuickActionCard
                 title="Input Berita"
@@ -198,7 +195,7 @@ setSiswaCount(siswaCounts);
                 buttonText="Kelola Berita"
                 onClick={() => goto("/guru/berita")}
                 icon={Newspaper}
-                color="blue"
+                color="green"
               />
               <QuickActionCard
                 title="Input Gallery"
@@ -206,51 +203,12 @@ setSiswaCount(siswaCounts);
                 buttonText="Kelola Gallery"
                 onClick={() => goto("/guru/gallery")}
                 icon={BookImage}
-                color="blue"
+                color="amber"
               />
             </div>
           </div>
 
-          {/* LIST KELAS */}
-          {assignments.length > 0 && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Kelas yang Anda Ampu</h2>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {assignments.map((assignment, idx) => (
-                  <div 
-                    key={idx}
-                    className="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer"
-                    onClick={() => goto("/guru/nilai-detail")}
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h3 className="font-semibold text-gray-900">
-                          {assignment.kelas?.nama}
-                        </h3>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {assignment.kelas?.tingkat} • SD Proyonanggan 9
-                        </p>
-                      </div>
-
-                      <div className="bg-indigo-100 p-2 rounded-lg">
-                        <Users className="w-5 h-5 text-indigo-600" />
-                      </div>
-                    </div>
-
-                    {/* JUMLAH SISWA */}
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">
-                        {siswaCount[assignment.kelas_id] ?? 0} Siswa
-
-                      </span>
-                      <ChevronRight className="w-4 h-4 text-gray-400" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+         
         </div>
       )}
     </GuruLayout>
