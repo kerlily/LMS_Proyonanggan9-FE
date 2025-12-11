@@ -177,7 +177,7 @@ export default function GuruDashboard() {
                 title="Input Nilai Akhir (Excel)"
                 description="Download template dan import nilai akhir"
                 buttonText="Kelola Nilai Akhir"
-                onClick={() => goto("/guru/nilai-akhir")}
+                onClick={() => goto("/guru/nilai")}
                 icon={Award}
                 color="blue"
               />
