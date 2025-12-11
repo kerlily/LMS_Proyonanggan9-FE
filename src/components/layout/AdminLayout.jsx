@@ -17,7 +17,7 @@ import {
   Newspaper,
   ChevronDown,
   ChevronRight,
-  Settings,
+  HelpCircle ,
 } from "lucide-react";
 import { logout as serviceLogout } from "../../_services/auth";
 import ProfileModal from "../ProfileModal";
@@ -314,6 +314,16 @@ export default function AdminLayout({ children }) {
                 }
               })}
             </div>
+            {/* Tombol Help - DESKTOP */}
+              <a
+                href="/help"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden md:flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-indigo-100 hover:text-white hover:bg-indigo-700/30 transition-all duration-200"
+              >
+                <HelpCircle className="w-4 h-4" />
+                Help
+              </a>
 
             {/* Profile Section */}
             <div className="hidden md:block relative">
@@ -463,6 +473,17 @@ export default function AdminLayout({ children }) {
                   );
                 }
               })}
+
+              {/* Tombol Help - MOBILE */}
+              <a
+                href="/help"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex md:hidden items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-indigo-100 hover:bg-indigo-700/50"
+              >
+                <HelpCircle className="w-5 h-5" />
+                Help
+              </a>
 
               <hr className="my-2 border-indigo-700/50" />
 

@@ -6,6 +6,8 @@ import MuridImage from "./assets/murid.jpeg"; // Importing student image
 import GuruImage from "./assets/guru.jpeg"; // Importing teacher image
 import DashboardImage from "./assets/dashboard.jpg"; // Importing dashboard image
 
+import HelpDocumentation from "./components/HelpDocumentation";
+
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleProtectedRoute from "./components/RoleProtectedRoute";
 
@@ -57,7 +59,7 @@ import SiswaJadwal from "./pages/public/SiswaJadwal";
 export default function App() {
   const location = useLocation();
   // routes or prefixes that should render without the centered max width wrapper
-  const fullWidthPrefixes = ["/siswa", "/admin", "/guru"];
+  const fullWidthPrefixes = ["/siswa", "/admin", "/guru", "/help"];
   // use prefix matching so all /admin routes (like /admin/siswa) become full-width
   const isFull = fullWidthPrefixes.some((p) => location.pathname.startsWith(p));
 
@@ -145,6 +147,9 @@ export default function App() {
             {/* Public / Auth */}
             <Route path="/siswa/login" element={<StudentLogin />} />
             <Route path="/admin/login" element={<AdminLogin />} />
+
+            {/* Help Page */}
+            <Route path="/help" element={<HelpDocumentation />} />
 
             {/* Student protected */}
             <Route

@@ -1,7 +1,7 @@
 // src/components/layout/GuruLayout.jsx
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, ClipboardList, Clipboard, User, LogOut, Menu, X, Key, ChevronDown, BookImage, Newspaper, UserStar, Calendar } from "lucide-react";
+import { Home, ClipboardList, Clipboard, User, LogOut, Menu, X, Key, ChevronDown, BookImage, Newspaper, UserStar, Calendar, HelpCircle } from "lucide-react";
 import { logout as serviceLogout } from "../../_services/auth"; 
 import ProfileModal from "../ProfileModal";
 import ChangePasswordModal from "../ChangePasswordModal";
@@ -13,6 +13,7 @@ export default function GuruLayout({ children }) {
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [mobileDropdown, setMobileDropdown] = useState(null);
 
   // FIXED: Use controlled state update to prevent infinite loop
   const [userState, setUserState] = useState(() => {
@@ -29,6 +30,7 @@ export default function GuruLayout({ children }) {
   const navigate = useNavigate();
   const updateInProgressRef = useRef(false);
   const dropdownRef = useRef(null);
+  const mobileDropdownRef = useRef(null);
 
   // Handle scroll effect for navbar
   useEffect(() => {
@@ -44,13 +46,24 @@ export default function GuruLayout({ children }) {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // Untuk desktop dropdown
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setOpenDropdown(null);
+      }
+      
+      // Untuk mobile dropdown
+      if (mobileDropdownRef.current && !mobileDropdownRef.current.contains(event.target)) {
+        setMobileDropdown(null);
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, []);
 
   // FIXED: Listen to localStorage changes with proper guards
@@ -84,7 +97,7 @@ export default function GuruLayout({ children }) {
     };
   }, []);
 
-  // Menu structure dengan dropdown untuk desktop
+  // Menu structure dengan dropdown
   const menuItems = [
     { icon: Home, label: "Dashboard", to: "/guru" },
     { icon: User, label: "Nilai Siswa", to: "/guru/nilai-siswa" },
@@ -106,18 +119,6 @@ export default function GuruLayout({ children }) {
         { icon: BookImage, label: "Galeri", to: "/guru/gallery" },
       ]
     },
-  ];
-
-  // Menu flat untuk mobile (tetap seperti sebelumnya)
-  const flatMenu = [
-    { icon: Home, label: "Dashboard", to: "/guru" },
-    { icon: ClipboardList, label: "Nilai (Excel)", to: "/guru/nilai" },
-    { icon: Clipboard, label: "Detail Nilai", to: "/guru/nilai-detail" },
-    { icon: UserStar , label: "Nilai Sikap", to: "/guru/nilai-sikap" },
-    { icon: User, label: "Nilai Siswa", to: "/guru/nilai-siswa" },
-    { icon: BookImage, label: "Galeri", to: "/guru/gallery" },
-    { icon: Newspaper, label: "Berita", to: "/guru/berita" },
-    { icon: Calendar, label: "Jadwal", to: "/guru/jadwal" },
   ];
 
   const handleLogout = useCallback(async () => {
@@ -196,6 +197,10 @@ export default function GuruLayout({ children }) {
 
   const toggleDropdown = (dropdownName) => {
     setOpenDropdown(openDropdown === dropdownName ? null : dropdownName);
+  };
+
+  const toggleMobileDropdown = (dropdownName) => {
+    setMobileDropdown(mobileDropdown === dropdownName ? null : dropdownName);
   };
 
   // Memoize display values
@@ -318,7 +323,21 @@ export default function GuruLayout({ children }) {
                   );
                 }
               })}
+
+                      {/* Tombol Help - DESKTOP */}
+                <a
+                  href="/help"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hidden md:flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-indigo-100 hover:text-white hover:bg-indigo-700/30 transition-all duration-200"
+                >
+                  <HelpCircle className="w-4 h-4" />
+                  Help
+                </a>
+
+
             </div>
+
 
             {/* User Profile Desktop */}
             <div className="hidden md:block relative">
@@ -415,36 +434,123 @@ export default function GuruLayout({ children }) {
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mobile Menu dengan Dropdown */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-indigo-700 bg-indigo-900/95 backdrop-blur-xl">
+          <div className="md:hidden border-t border-indigo-700 bg-indigo-900/95 backdrop-blur-xl" ref={mobileDropdownRef}>
             <div className="px-4 py-3 space-y-1">
-              {flatMenu.map((item) => {
+              {menuItems.map((item) => {
                 const Icon = item.icon;
-                const active = isActive(item.to);
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                      active
-                        ? "bg-indigo-700 text-white shadow-sm border border-indigo-600/50"
-                        : "text-indigo-100 hover:bg-indigo-700/50"
-                    }`}
-                  >
-                    <Icon className={`w-5 h-5 ${active ? "scale-110" : ""}`} />
-                    {item.label}
-                  </Link>
-                );
+                
+                if (item.items) {
+                  // Dropdown menu item untuk mobile
+                  const isActiveDropdown = isDropdownActive(item.items);
+                  return (
+                    <div key={item.label} className="space-y-1">
+                      <button
+                        onClick={() => toggleMobileDropdown(item.label)}
+                        className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                          isActiveDropdown
+                            ? "bg-indigo-700 text-white shadow-sm border border-indigo-600/50"
+                            : "text-indigo-100 hover:bg-indigo-700/50"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Icon className="w-5 h-5" />
+                          {item.label}
+                        </div>
+                        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${
+                          mobileDropdown === item.label ? 'rotate-180' : ''
+                        }`} />
+                      </button>
+
+                      {mobileDropdown === item.label && (
+                        <div className="ml-6 space-y-1 border-l border-indigo-700/50 pl-3">
+                          {item.items.map((subItem) => {
+                            const SubIcon = subItem.icon;
+                            const active = isActive(subItem.to);
+                            return (
+                              <Link
+                                key={subItem.to}
+                                to={subItem.to}
+                                onClick={() => setMobileMenuOpen(false)}
+                                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors duration-150 ${
+                                  active
+                                    ? "text-white bg-indigo-700/50"
+                                    : "text-indigo-100 hover:bg-indigo-700/30 hover:text-white"
+                                }`}
+                              >
+                                <SubIcon className="w-4 h-4" />
+                                {subItem.label}
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                } else {
+                  // Regular menu item untuk mobile
+                  const active = isActive(item.to);
+                  return (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                        active
+                          ? "bg-indigo-700 text-white shadow-sm border border-indigo-600/50"
+                          : "text-indigo-100 hover:bg-indigo-700/50"
+                      }`}
+                    >
+                      <Icon className={`w-5 h-5 ${active ? "scale-110" : ""}`} />
+                      {item.label}
+                    </Link>
+                  );
+                }
               })}
+
+               {/* Tombol Help - MOBILE */}
+              <a
+                href="/help"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex md:hidden items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-indigo-100 hover:bg-indigo-700/50"
+              >
+                <HelpCircle className="w-5 h-5" />
+                Help
+              </a>
               
               <hr className="my-2 border-indigo-700/50" />
               
+              {/* User Profile Section untuk Mobile */}
               <div className="px-3 py-2">
-                <div className="text-xs font-medium text-indigo-300 uppercase tracking-wider mb-2">
-                  Akun
+                <div className="flex items-center gap-3 mb-3 px-2 py-2 rounded-xl bg-indigo-800/50">
+                  <div className="relative">
+                    {avatarPhotoUrl ? (
+                      <img 
+                        src={avatarPhotoUrl} 
+                        alt={displayName}
+                        className="w-10 h-10 rounded-full object-cover shadow-sm ring-2 ring-indigo-400"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          if (e.target.nextSibling) {
+                            e.target.nextSibling.style.display = 'flex';
+                          }
+                        }}
+                      />
+                    ) : null}
+                    <div 
+                      className={`w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-base shadow-sm ring-2 ring-indigo-400 ${avatarPhotoUrl ? 'hidden' : ''}`}
+                    >
+                      {userInitial}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-white">{displayName}</div>
+                    <div className="text-xs text-indigo-200">Guru</div>
+                  </div>
                 </div>
+                
                 <button
                   onClick={() => { setMobileMenuOpen(false); openProfileModal(); }}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-indigo-100 hover:bg-indigo-700/50 w-full text-left transition-colors duration-150"
