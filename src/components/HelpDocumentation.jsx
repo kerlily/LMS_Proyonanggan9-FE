@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { BookOpen, Users, GraduationCap, School, ChevronRight, Home, Menu, X, Search } from 'lucide-react';
+import helperImages from '../assets/helper';
 
 const HelpDocumentation = () => {
   const [activeRole, setActiveRole] = useState('home');
@@ -46,43 +47,22 @@ const HelpDocumentation = () => {
             {
               title: 'Buka Halaman Login',
               description: 'Akses website LMS dan klik tombol "Login Murid"',
-              image: 'https://picsum.photos/800/400?random=1'
+              image: helperImages['./login-siswa1.png']
             },
             {
               title: 'Pilih Kelas',
               description: 'Pilih kelas Anda dari dropdown yang tersedia',
-              image: 'https://picsum.photos/800/400?random=2'
+              image: helperImages['./login-siswa2.png']
             },
             {
               title: 'Pilih Nama',
               description: 'Cari dan pilih nama Anda dari daftar siswa',
-              image: 'https://picsum.photos/800/400?random=3'
+              image: helperImages['./login-siswa3.png']
             },
             {
               title: 'Masukkan Password',
               description: 'Ketik password yang telah diberikan oleh guru, lalu klik "Masuk"',
-              image: 'https://picsum.photos/800/400?random=4'
-            }
-          ]
-        },
-        {
-          id: 'lihat-nilai',
-          title: 'Melihat Nilai',
-          steps: [
-            {
-              title: 'Dashboard Nilai',
-              description: 'Setelah login, Anda akan langsung melihat dashboard dengan semua nilai Anda',
-              image: 'https://picsum.photos/800/400?random=5'
-            },
-            {
-              title: 'Nilai per Semester',
-              description: 'Nilai ditampilkan per semester dan tahun ajaran. Scroll ke bawah untuk melihat nilai semester sebelumnya',
-              image: 'https://picsum.photos/800/400?random=6'
-            },
-            {
-              title: 'Detail Nilai Mapel',
-              description: 'Klik pada mata pelajaran untuk melihat detail nilai dan catatan dari guru',
-              image: 'https://picsum.photos/800/400?random=7'
+              image: helperImages['./login-siswa4.png']
             }
           ]
         },
@@ -93,17 +73,17 @@ const HelpDocumentation = () => {
             {
               title: 'Akses Menu Jadwal',
               description: 'Klik menu "Jadwal" di sidebar atau navigation bar',
-              image: 'https://picsum.photos/800/400?random=8'
+              image: helperImages['./jadwal-siswa1.png']
             },
             {
               title: 'Lihat Jadwal Harian',
               description: 'Jadwal ditampilkan per hari. Anda bisa melihat mata pelajaran dan jam pelajaran setiap hari',
-              image: 'https://picsum.photos/800/400?random=9'
+              image: helperImages['./jadwal-siswa2.png']
             },
             {
               title: 'Cetak Jadwal',
               description: 'Klik tombol "Cetak" untuk mencetak jadwal pelajaran Anda',
-              image: 'https://picsum.photos/800/400?random=10'
+              image: helperImages['./jadwal-siswa3.png']
             }
           ]
         }
@@ -119,14 +99,9 @@ const HelpDocumentation = () => {
           title: 'Cara Login Guru',
           steps: [
             {
-              title: 'Akses Login',
-              description: 'Buka website LMS dan klik "Login Guru"',
-              image: 'https://picsum.photos/800/400?random=11'
-            },
-            {
               title: 'Masukkan Kredensial',
               description: 'Masukkan email dan password yang telah diberikan oleh admin',
-              image: 'https://picsum.photos/800/400?random=12'
+              image: helperImages['./login-guru1.png']
             }
           ]
         },
@@ -137,32 +112,27 @@ const HelpDocumentation = () => {
             {
               title: 'Akses Menu Struktur Nilai',
               description: 'Dari dashboard, klik "Buat Struktur Nilai" atau akses menu Struktur Nilai',
-              image: 'https://picsum.photos/800/400?random=13'
+              image: helperImages['./struktur-nilai1.png']
             },
             {
               title: 'Pilih Kelas dan Semester',
               description: 'Pilih kelas yang Anda ampu dan semester aktif',
-              image: 'https://picsum.photos/800/400?random=14'
+              image: helperImages['./struktur-nilai2.png']
             },
             {
               title: 'Pilih Mata Pelajaran',
               description: 'Pilih mata pelajaran yang akan dibuat struktur nilainya',
-              image: 'https://picsum.photos/800/400?random=15'
+              image: helperImages['./struktur-nilai3.png']
             },
             {
               title: 'Atur Komponen Nilai',
               description: 'Tambahkan komponen nilai seperti Formatif, UTS (ASLIM), dan UAS (ASAS) beserta bobotnya',
-              image: 'https://picsum.photos/800/400?random=16'
-            },
-            {
-              title: 'Tambah Lingkup Materi',
-              description: 'Untuk setiap komponen, tambahkan lingkup materi yang akan dinilai',
-              image: 'https://picsum.photos/800/400?random=17'
+              image: helperImages['./struktur-nilai4.png']
             },
             {
               title: 'Simpan Struktur',
               description: 'Klik "Simpan" untuk menyimpan struktur nilai',
-              image: 'https://picsum.photos/800/400?random=18'
+              image: helperImages['./struktur-nilai5.png']
             }
           ]
         },
@@ -173,32 +143,32 @@ const HelpDocumentation = () => {
             {
               title: 'Akses Input Nilai',
               description: 'Dari dashboard, klik "Buka Input Nilai" atau menu Input Nilai Detail',
-              image: 'https://picsum.photos/800/400?random=19'
+              image: helperImages['./nilai-detail1.png']
             },
             {
               title: 'Filter Data',
               description: 'Pilih kelas, semester, dan mata pelajaran',
-              image: 'https://picsum.photos/800/400?random=20'
+              image: helperImages['./nilai-detail3.png']
             },
             {
               title: 'Input Nilai Siswa',
               description: 'Klik "Input" atau "Edit" pada nama siswa untuk mengisi nilai per komponen dan lingkup materi',
-              image: 'https://picsum.photos/800/400?random=21'
+              image: helperImages['./nilai-detail4.png']
             },
             {
               title: 'Isi Form Nilai',
               description: 'Masukkan nilai untuk setiap lingkup materi. Sistem akan otomatis menghitung rata-rata',
-              image: 'https://picsum.photos/800/400?random=22'
+              image: helperImages['./nilai-detail5.png']
             },
             {
               title: 'Simpan Nilai',
               description: 'Klik "Simpan" setelah selesai mengisi nilai',
-              image: 'https://picsum.photos/800/400?random=23'
+              image: helperImages['./nilai-detail6.png']
             },
             {
               title: 'Generate Nilai Akhir',
               description: 'Setelah semua siswa memiliki nilai lengkap, klik "Generate Nilai Akhir" untuk menghitung nilai akhir otomatis',
-              image: 'https://picsum.photos/800/400?random=24'
+              image: helperImages['./nilai-detail7.png']
             }
           ]
         },
@@ -209,27 +179,27 @@ const HelpDocumentation = () => {
             {
               title: 'Akses Menu',
               description: 'Klik menu "Nilai Sikap & Ketidakhadiran"',
-              image: 'https://picsum.photos/800/400?random=25'
+              image: helperImages['./nilai-sikap1.png']
             },
             {
               title: 'Pilih Filter',
               description: 'Pilih kelas dan semester',
-              image: 'https://picsum.photos/800/400?random=26'
+              image: helperImages['./nilai-sikap2.png']
             },
             {
               title: 'Isi Nilai Sikap',
               description: 'Pilih nilai sikap (A-E) untuk setiap siswa dan isi deskripsi sikap',
-              image: 'https://picsum.photos/800/400?random=27'
+              image: helperImages['./nilai-sikap3.png']
             },
             {
               title: 'Isi Ketidakhadiran',
               description: 'Masukkan jumlah ijin, sakit, dan alpa untuk setiap siswa',
-              image: 'https://picsum.photos/800/400?random=28'
+              image: helperImages['./nilai-sikap4.png']
             },
             {
               title: 'Simpan Data',
               description: 'Klik "Simpan Semua" untuk menyimpan data',
-              image: 'https://picsum.photos/800/400?random=29'
+              image: helperImages['./nilai-sikap5.png']
             }
           ]
         },
@@ -240,32 +210,32 @@ const HelpDocumentation = () => {
             {
               title: 'Akses Menu Jadwal',
               description: 'Klik menu "Kelola Jadwal"',
-              image: 'https://picsum.photos/800/400?random=30'
+              image: helperImages['./jadwal-guru1.png']
             },
             {
               title: 'Pilih Kelas',
               description: 'Pilih kelas yang akan dibuat jadwalnya',
-              image: 'https://picsum.photos/800/400?random=31'
+              image: helperImages['./jadwal-guru2.png']
             },
             {
               title: 'Buat Jadwal Baru',
               description: 'Klik "Buat Jadwal Baru" dan isi nama jadwal',
-              image: 'https://picsum.photos/800/400?random=32'
+              image: helperImages['./jadwal-guru3.png']
             },
             {
               title: 'Tambah Slot Jadwal',
               description: 'Untuk setiap hari, klik "Tambah Slot" dan pilih jenis slot (Pelajaran atau Istirahat)',
-              image: 'https://picsum.photos/800/400?random=33'
+              image: helperImages['./jadwal-guru4.png']
             },
             {
               title: 'Atur Jam & Mata Pelajaran',
               description: 'Tentukan jam mulai, jam selesai, dan pilih mata pelajaran untuk slot pelajaran',
-              image: 'https://picsum.photos/800/400?random=34'
+              image: helperImages['./jadwal-guru5.png']
             },
             {
               title: 'Simpan Jadwal',
               description: 'Klik "Simpan Jadwal" setelah selesai mengatur semua slot',
-              image: 'https://picsum.photos/800/400?random=35'
+              image: helperImages['./jadwal-guru6.png']
             }
           ]
         },
@@ -276,22 +246,22 @@ const HelpDocumentation = () => {
             {
               title: 'Akses Menu Berita',
               description: 'Klik menu "Kelola Berita"',
-              image: 'https://picsum.photos/800/400?random=36'
+              image: helperImages['./berita-guru1.png']
             },
             {
               title: 'Buat Berita Baru',
               description: 'Klik "Buat Berita" dan isi form berita',
-              image: 'https://picsum.photos/800/400?random=37'
+              image: helperImages['./berita-guru2.png']
             },
             {
               title: 'Upload Gambar',
-              description: 'Upload gambar untuk berita (opsional)',
-              image: 'https://picsum.photos/800/400?random=38'
+              description: 'Upload gambar untuk berita',
+              image: helperImages['./berita-guru3.png']
             },
             {
               title: 'Publish atau Draft',
               description: 'Pilih apakah berita akan langsung dipublish atau disimpan sebagai draft',
-              image: 'https://picsum.photos/800/400?random=39'
+              image: helperImages['./berita-guru4.png']
             }
           ]
         }
@@ -309,13 +279,8 @@ const HelpDocumentation = () => {
             {
               title: 'Akses Halaman Login',
               description: 'Buka website LMS dan klik "Login Guru" (admin menggunakan login yang sama)',
-              image: 'https://picsum.photos/800/400?random=40'
+              image: helperImages['./login-guru1.png']
             },
-            {
-              title: 'Masukkan Kredensial',
-              description: 'Masukkan email dan password admin',
-              image: 'https://picsum.photos/800/400?random=41'
-            }
           ]
         },
         {
@@ -325,27 +290,27 @@ const HelpDocumentation = () => {
             {
               title: 'Akses Menu Siswa',
               description: 'Dari dashboard admin, klik "Buka Kelola Siswa"',
-              image: 'https://picsum.photos/800/400?random=42'
+              image: helperImages['./siswa-admin1.png']
             },
             {
               title: 'Tambah Siswa',
               description: 'Klik "Tambah Siswa" untuk menambah siswa baru secara manual',
-              image: 'https://picsum.photos/800/400?random=43'
+              image: helperImages['./siswa-admin2.png']
             },
             {
               title: 'Isi Data Siswa',
               description: 'Lengkapi form dengan nama, tahun lahir, dan kelas siswa',
-              image: 'https://picsum.photos/800/400?random=44'
+              image: helperImages['./siswa-admin3.png']
             },
             {
               title: 'Edit Data Siswa',
               description: 'Klik tombol "Edit" pada daftar siswa untuk mengubah data',
-              image: 'https://picsum.photos/800/400?random=45'
+              image: helperImages['./siswa-admin4.png']
             },
             {
               title: 'Reset Password Siswa',
               description: 'Di halaman edit siswa, klik "Reset Password" untuk membuat password baru',
-              image: 'https://picsum.photos/800/400?random=46'
+              image: helperImages['./siswa-admin5.png']
             }
           ]
         },
@@ -356,27 +321,27 @@ const HelpDocumentation = () => {
             {
               title: 'Akses Menu Guru',
               description: 'Klik "Buka Kelola Guru" dari dashboard',
-              image: 'https://picsum.photos/800/400?random=47'
+              image: helperImages['./guru-admin1.png']
             },
             {
               title: 'Tambah Guru',
               description: 'Klik "Create Guru" untuk menambah guru baru',
-              image: 'https://picsum.photos/800/400?random=48'
+              image: helperImages['./guru-admin2.png']
             },
             {
               title: 'Isi Form Guru',
               description: 'Lengkapi data guru: nama, email, password, NIP, dan nomor HP',
-              image: 'https://picsum.photos/800/400?random=49'
+              image: helperImages['./guru-admin3.png']
             },
             {
               title: 'Assign Wali Kelas',
               description: 'Klik "Assign Wali" untuk menugaskan guru sebagai wali kelas',
-              image: 'https://picsum.photos/800/400?random=50'
+              image: helperImages['./guru-admin4.png']
             },
             {
               title: 'Pilih Guru dan Kelas',
               description: 'Pilih guru dan kelas yang akan ditugaskan',
-              image: 'https://picsum.photos/800/400?random=51'
+              image: helperImages['./guru-admin5.png']
             }
           ]
         },
@@ -387,22 +352,22 @@ const HelpDocumentation = () => {
             {
               title: 'Akses Menu Mapel',
               description: 'Klik "Buka Kelola Mapel" dari dashboard',
-              image: 'https://picsum.photos/800/400?random=52'
+              image: helperImages['./mapel-admin1.png']
             },
             {
               title: 'Tambah Mapel',
               description: 'Klik "Tambah Mapel" dan isi nama serta kode mata pelajaran',
-              image: 'https://picsum.photos/800/400?random=53'
+              image: helperImages['./mapel-admin2.png']
             },
             {
               title: 'Assign Mapel ke Kelas',
               description: 'Klik "Assign Mapel" untuk menghubungkan mata pelajaran dengan kelas',
-              image: 'https://picsum.photos/800/400?random=54'
+              image: helperImages['./mapel-admin3.png']
             },
             {
               title: 'Pilih Kelas dan Mapel',
               description: 'Pilih kelas dan centang mata pelajaran yang akan ditambahkan',
-              image: 'https://picsum.photos/800/400?random=55'
+              image: helperImages['./mapel-admin4.png']
             }
           ]
         },
@@ -413,28 +378,33 @@ const HelpDocumentation = () => {
             {
               title: 'Akses Menu',
               description: 'Klik tombol "Ganti Tahun Ajaran" atau akses menu Tahun Ajaran',
-              image: 'https://picsum.photos/800/400?random=56'
+              image: helperImages['./year-admin1.png']
             },
             {
-              title: 'Buat Tahun Ajaran Baru',
-              description: 'Klik "Buat Tahun Ajaran" dan isi nama (contoh: 2024/2025)',
-              image: 'https://picsum.photos/800/400?random=57'
+              title: 'Ganti Tahun Ajaran Baru',
+              description: 'Klik "Change Year" dan isi nama tahun baru (contoh: 2024/2025)',
+              image: helperImages['./year-admin6.png']
+            },
+            {
+              title: 'Isi Form Tahun Ajaran',
+              description: 'isi tahun ajaran, dan pilih siswa yang tidak naik kelas jika ada',
+              image: helperImages['./year-admin2.png']
+            },
+             {
+              title: 'Preview Tahun Ajaran',
+              description: 'preview data tahun ajaran baru sebelum disimpan untuk memastikan data sudah benar',
+              image: helperImages['./year-admin3.png']
             },
             {
               title: 'Set Tahun Ajaran Aktif',
               description: 'Centang "Set aktif" untuk menjadikan tahun ajaran tersebut aktif',
-              image: 'https://picsum.photos/800/400?random=58'
+              image: helperImages['./year-admin4.png']
             },
             {
               title: 'Toggle Semester',
               description: 'Klik tombol toggle pada semester untuk mengaktifkan/menonaktifkan semester',
-              image: 'https://picsum.photos/800/400?random=59'
+              image: helperImages['./year-admin5.png']
             },
-            {
-              title: 'Change Year',
-              description: 'Gunakan fitur "Change Year" untuk pergantian tahun ajaran otomatis (naik kelas)',
-              image: 'https://picsum.photos/800/400?random=60'
-            }
           ]
         }
       ]
