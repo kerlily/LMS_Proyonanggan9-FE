@@ -16,12 +16,6 @@ import {
 } from "../../../_services/kelasMapel";
 import AdminLayout from "../../../components/layout/AdminLayout";
 
-/**
- * KelasMapelManager
- * - Jika backend tidak punya /api/kelas, ganti getKelasList import/logic sesuai endpointmu.
- * - Route /admin/kelas-mapel  atau /admin/kelas/:kelasId/mapel bisa dipasang.
- */
-
 export default function KelasMapelManager() {
   const [kelasList, setKelasList] = useState([]);
   const [selectedKelas, setSelectedKelas] = useState(null);

@@ -124,30 +124,35 @@ export default function AdminList() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={() => goto(`/admin/admins/edit/${admin.id}`)}
-                          className="text-indigo-600 hover:text-indigo-900 mr-3"
-                          title="Edit"
-                        >
-                          <Edit className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => goto(`/admin/admins/reset-password/${admin.id}`)}
-                          className="text-amber-600 hover:text-amber-900 mr-3"
-                          title="Reset Password"
-                        >
-                          <Key className="w-5 h-5" />
-                        </button>
-                        {admin.id !== currentUserId && (
-                          <button
-                            onClick={() => handleDelete(admin.id)}
-                            className="text-red-600 hover:text-red-900"
-                            title="Hapus"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
-                        )}
-                      </td>
+  {admin.id !== currentUserId && (
+    <>
+      <button
+        onClick={() => goto(`/admin/admins/edit/${admin.id}`)}
+        className="text-indigo-600 hover:text-indigo-900 mr-3"
+        title="Edit"
+      >
+        <Edit className="w-5 h-5" />
+      </button>
+
+      <button
+        onClick={() => goto(`/admin/admins/reset-password/${admin.id}`)}
+        className="text-amber-600 hover:text-amber-900 mr-3"
+        title="Reset Password"
+      >
+        <Key className="w-5 h-5" />
+      </button>
+
+      <button
+        onClick={() => handleDelete(admin.id)}
+        className="text-red-600 hover:text-red-900"
+        title="Hapus"
+      >
+        <Trash2 className="w-5 h-5" />
+      </button>
+    </>
+  )}
+</td>
+
                     </tr>
                   ))}
                 </tbody>

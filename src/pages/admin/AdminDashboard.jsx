@@ -277,7 +277,7 @@ export default function AdminDashboard() {
                 title="Log Aktivitas"
                 description="Lihat riwayat aktivitas pengguna di sistem"
                 buttonText="Buka Log Aktivitas"
-                onClick={() => goto("/admin/mapel")}
+                onClick={() => goto("/admin/logs")}
                 icon={BookOpen}
                 color="blue"
               />

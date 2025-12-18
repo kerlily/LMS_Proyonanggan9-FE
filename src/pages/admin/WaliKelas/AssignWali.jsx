@@ -7,7 +7,7 @@ import {
   listWaliKelas,
   unassignWali,
 } from "../../../_services/admin";
-import {  useLocation } from "react-router-dom"; // Tambah useLocation
+import { useLocation } from "react-router-dom";
 import AdminLayout from "../../../components/layout/AdminLayout";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
@@ -18,38 +18,38 @@ import {
   RefreshCw,
   Check,
   Search,
+  Star,
+  UserCheck,
 } from "lucide-react";
 
 const MySwal = withReactContent(Swal);
 
 export default function AssignWali() {
-  const location = useLocation(); // Untuk mengambil query params
+  const location = useLocation();
 
-  // Data List untuk Form Dropdown (dari Kode 1)
   const [gurus, setGurus] = useState([]);
-  const [kelasList, setKelasList] = useState([]); // Diubah namanya dari 'kelas' menjadi 'kelasList' untuk menghindari konflik
+  const [kelasList, setKelasList] = useState([]);
+  const [rows, setRows] = useState([]);
 
-  const [kelasRaw, setKelasRaw] = useState([]); // raw kelas list from API
-  const [waliRaw, setWaliRaw] = useState([]); // raw wali assignments from API
-  const [rows, setRows] = useState([]); // merged unique rows { kelas, wali (or null) }
+  const [form, setForm] = useState({ 
+    guru_id: "", 
+    kelas_id: "",
+    is_primary: false 
+  });
 
-  const [form, setForm] = useState({ guru_id: "", kelas_id: "" });
-
-  const [loading, setLoading] = useState(false); // for whole page refresh actions
-  const [submitting, setSubmitting] = useState(false); // for assign button
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [msg, setMsg] = useState(null);
   const [err, setErr] = useState(null);
-  const [filterNoWali, setFilterNoWali] = useState(false); // Dari Kode 2
-  const [search, setSearch] = useState(""); // Dari Kode 2
+  const [filterNoWali, setFilterNoWali] = useState(false);
+  const [search, setSearch] = useState("");
 
-  // Ambil kelas_id dari URL query jika ada (untuk pre-select form dari Kode 2 handleAssignClick)
   useEffect(() => {
     const query = new URLSearchParams(location.search);
     const kelas_id = query.get("kelas_id");
     if (kelas_id) {
       setForm((p) => ({ ...p, kelas_id: kelas_id }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search]);
 
   async function fetchAll() {
@@ -62,69 +62,55 @@ export default function AssignWali() {
         listWaliKelas(),
       ]);
 
-    
-      const gItems =
-        gRes.status === "fulfilled"
-          ? Array.isArray(gRes.value.data)
-            ? gRes.value.data
-            : gRes.value.data?.data ?? gRes.value.data ?? []
-          : [];
+      const gItems = gRes.status === "fulfilled"
+        ? Array.isArray(gRes.value.data)
+          ? gRes.value.data
+          : gRes.value.data?.data ?? []
+        : [];
       setGurus(gItems);
 
-      // normalize kelas list (untuk dropdown form)
-      const kItems =
-        kRes.status === "fulfilled"
-          ? Array.isArray(kRes.value.data)
-            ? kRes.value.data
-            : kRes.value.data?.data ?? kRes.value.data ?? []
-          : [];
-      setKelasList(kItems); // untuk dropdown
+      const kItems = kRes.status === "fulfilled"
+        ? Array.isArray(kRes.value.data)
+          ? kRes.value.data
+          : kRes.value.data?.data ?? []
+        : [];
+      setKelasList(kItems);
 
-      // normalize wali list (raw)
-      const wItems =
-        wRes.status === "fulfilled"
-          ? Array.isArray(wRes.value.data)
-            ? wRes.value.data
-            : wRes.value.data?.data ?? wRes.value.data ?? []
-          : [];
-      setWaliRaw(wItems); // raw wali assignments
+      const wItems = wRes.status === "fulfilled"
+        ? Array.isArray(wRes.value.data)
+          ? wRes.value.data
+          : wRes.value.data?.data ?? []
+        : [];
 
-      // --- Logika Merge Rows (Diambil dari Kode 2) ---
-
-      // build map of wali by kelas_id (use last assignment if duplicates present)
-      const waliMap = new Map();
-      (wItems || []).forEach((w) => {
-        const kid = w?.kelas?.id ?? w?.kelas_id ?? null;
-        if (kid) waliMap.set(Number(kid), w);
+      // Group wali by kelas_id
+      const waliByKelas = {};
+      wItems.forEach((w) => {
+        const kid = w?.kelas?.id ?? w?.kelas_id;
+        if (kid) {
+          if (!waliByKelas[kid]) waliByKelas[kid] = [];
+          waliByKelas[kid].push(w);
+        }
       });
 
-      // create unique list of classes (use kItems).
-      let classes = kItems;
-      if ((!Array.isArray(classes) || classes.length === 0) && Array.isArray(wItems) && wItems.length) {
-        classes = wItems
-          .map((w) => w.kelas)
-          .filter(Boolean)
-          .reduce((acc, k) => {
-            if (!acc.find((x) => x.id === k.id)) acc.push(k);
-            return acc;
-          }, []);
-      }
+      // Sort each kelas's wali: primary first
+      Object.keys(waliByKelas).forEach((kid) => {
+        waliByKelas[kid].sort((a, b) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0));
+      });
 
-      // normalize rows
-      const merged = (classes || []).map((k) => ({
+      const merged = kItems.map((k) => ({
         kelas: {
           id: k.id,
           nama: k.nama ?? `${k.tingkat ?? ""} ${k.section ?? ""}`.trim(),
           tingkat: k.tingkat,
           section: k.section,
         },
-        wali: waliMap.get(Number(k.id)) ?? null, // may be null
+        wali_list: waliByKelas[k.id] ?? [],
       }));
 
-      // If there are wali assignments for classes not present in kelas list, include them as well
-      (wItems || []).forEach((w) => {
-        const kid = w?.kelas?.id ?? w?.kelas_id ?? null;
-        if (kid && !merged.find((r) => Number(r.kelas.id) === Number(kid))) {
+      // Add kelas from wali that not in kItems
+      wItems.forEach((w) => {
+        const kid = w?.kelas?.id ?? w?.kelas_id;
+        if (kid && !merged.find((r) => r.kelas.id === kid)) {
           merged.push({
             kelas: {
               id: kid,
@@ -132,14 +118,12 @@ export default function AssignWali() {
               tingkat: w.kelas?.tingkat,
               section: w.kelas?.section,
             },
-            wali: w,
+            wali_list: waliByKelas[kid] ?? [],
           });
         }
       });
 
-      // sort by kelas.nama or tingkat/section
       merged.sort((a, b) => {
-        // prefer tingkat then section then nama
         const ta = a.kelas.tingkat ?? 0;
         const tb = b.kelas.tingkat ?? 0;
         if (ta !== tb) return ta - tb;
@@ -151,7 +135,7 @@ export default function AssignWali() {
       setRows(merged);
     } catch (e) {
       console.error("fetchAll error", e);
-      setErr("Gagal memuat data. Cek koneksi atau token.");
+      setErr("Gagal memuat data.");
     } finally {
       setLoading(false);
     }
@@ -159,12 +143,14 @@ export default function AssignWali() {
 
   useEffect(() => {
     fetchAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((p) => ({ ...p, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setForm((p) => ({ 
+      ...p, 
+      [name]: type === 'checkbox' ? checked : value 
+    }));
   };
 
   const handleAssign = async (e) => {
@@ -179,41 +165,35 @@ export default function AssignWali() {
 
     try {
       setSubmitting(true);
-      // show loading modal (do NOT await)
       MySwal.fire({
         title: "Menugaskan wali kelas...",
         allowOutsideClick: false,
         showConfirmButton: false,
-        didOpen: () => {
-          MySwal.showLoading();
-        },
+        didOpen: () => MySwal.showLoading(),
       });
 
       const payload = {
         guru_id: Number(form.guru_id),
         kelas_id: Number(form.kelas_id),
+        is_primary: form.is_primary,
       };
 
       const res = await assignWaliKelas(payload);
 
-      // close loading modal
       MySwal.close();
-
       MySwal.fire({
         icon: "success",
         title: "Berhasil",
         text: res?.data?.message ?? "Wali kelas telah ditugaskan.",
       });
 
-      // refresh lists
       await fetchAll();
-
-      setForm({ guru_id: "", kelas_id: "" });
+      setForm({ guru_id: "", kelas_id: "", is_primary: false });
       setMsg("Wali kelas berhasil diassign.");
     } catch (error) {
       MySwal.close();
       console.error("assign error", error);
-      const message = error?.response?.data?.message || error.message || "Gagal assign wali kelas.";
+      const message = error?.response?.data?.message || "Gagal assign wali kelas.";
       setErr(message);
       MySwal.fire({
         icon: "error",
@@ -225,7 +205,6 @@ export default function AssignWali() {
     }
   };
 
-  // Unassign diimplementasikan kembali seperti di Kode 1, namun menggunakan struktur data `r.wali` dari Kode 2
   const handleUnassign = async (waliRecord) => {
     if (!waliRecord || !waliRecord.id) {
       MySwal.fire({ icon: "error", title: "Data wali tidak valid" });
@@ -233,8 +212,8 @@ export default function AssignWali() {
     }
 
     const confirm = await MySwal.fire({
-      title: `Unassign wali untuk ${waliRecord.kelas?.nama ?? "kelas?"}?`,
-      html: `<b>${waliRecord.guru ? waliRecord.guru.nama : "Tanpa wali"}</b> — ${waliRecord.kelas?.nama ?? ""}`,
+      title: `Unassign wali ${waliRecord.is_primary ? 'utama' : 'tambahan'}?`,
+      html: `<b>${waliRecord.guru?.nama ?? "?"}</b> dari ${waliRecord.kelas?.nama ?? ""}`,
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Unassign",
@@ -244,7 +223,6 @@ export default function AssignWali() {
 
     if (!confirm.isConfirmed) return;
 
-    // show loading
     MySwal.fire({
       title: "Meng-unassign...",
       allowOutsideClick: false,
@@ -254,20 +232,16 @@ export default function AssignWali() {
 
     try {
       const res = await unassignWali(waliRecord.id);
-
       MySwal.close();
       MySwal.fire({
         icon: "success",
         title: "Berhasil",
         text: res?.data?.message ?? "Wali berhasil di-unassign.",
       });
-
-      // update UI: refresh list
       await fetchAll();
     } catch (error) {
       MySwal.close();
-      console.error("unassign error", error);
-      const message = error?.response?.data?.message || error.message || "Gagal unassign wali.";
+      const message = error?.response?.data?.message || "Gagal unassign wali.";
       MySwal.fire({
         icon: "error",
         title: "Gagal",
@@ -276,15 +250,15 @@ export default function AssignWali() {
     }
   };
 
-  // Logika Filter dan Search dari Kode 2
   const visibleRows = rows.filter((r) => {
-    if (filterNoWali && r.wali) return false;
+    if (filterNoWali && r.wali_list.length > 0) return false;
     if (!search) return true;
     const q = search.toLowerCase();
     const kelasLabel = (r.kelas.nama ?? "").toLowerCase();
-    const waliLabel =
-      (r.wali?.guru?.nama ?? r.wali?.guru?.user?.name ?? r.wali?.guru?.user?.email ?? "").toLowerCase();
-    return kelasLabel.includes(q) || waliLabel.includes(q);
+    const waliLabels = r.wali_list.map(w => 
+      (w?.guru?.nama ?? w?.guru?.user?.name ?? "").toLowerCase()
+    ).join(" ");
+    return kelasLabel.includes(q) || waliLabels.includes(q);
   });
 
   return (
@@ -297,29 +271,29 @@ export default function AssignWali() {
             </div>
             <div>
               <h1 className="text-2xl font-semibold">Assign Wali Kelas</h1>
-              <p className="text-sm text-gray-500">Assign atau unassign wali kelas untuk tahun ajaran aktif.</p>
+              <p className="text-sm text-gray-500">
+                Assign wali kelas utama dan tambahan (guru agama, olahraga, dll)
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                setForm({ guru_id: "", kelas_id: "" });
-                setMsg(null);
-                setErr(null);
-                setSearch("");
-                setFilterNoWali(false);
-                fetchAll(); // Refresh data
-              }}
-              className="px-3 py-2 border rounded bg-white hover:bg-gray-50 text-sm flex items-center gap-2"
-            >
-              <RefreshCw className="w-4 h-4" /> Refresh Data
-            </button>
-          </div>
+          <button
+            onClick={() => {
+              setForm({ guru_id: "", kelas_id: "", is_primary: false });
+              setMsg(null);
+              setErr(null);
+              setSearch("");
+              setFilterNoWali(false);
+              fetchAll();
+            }}
+            className="px-3 py-2 border rounded bg-white hover:bg-gray-50 text-sm flex items-center gap-2"
+          >
+            <RefreshCw className="w-4 h-4" /> Refresh
+          </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Assign Form (Dari Kode 1) */}
+          {/* Form */}
           <div className="col-span-1 bg-white rounded-lg shadow p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-indigo-50 rounded-md flex items-center justify-center">
@@ -327,7 +301,7 @@ export default function AssignWali() {
               </div>
               <div>
                 <div className="text-lg font-medium">Form Assign</div>
-                <div className="text-xs text-gray-500">Pilih guru dan kelas lalu tekan Assign</div>
+                <div className="text-xs text-gray-500">Pilih guru dan kelas</div>
               </div>
             </div>
 
@@ -344,7 +318,7 @@ export default function AssignWali() {
                   <option value="">-- Pilih Guru --</option>
                   {gurus.map((g) => (
                     <option key={g.id} value={g.id}>
-                      {g.nama ?? g.user?.name ?? g.user?.email ?? `Guru ${g.id}`}
+                      {g.nama ?? g.user?.name ?? `Guru ${g.id}`}
                     </option>
                   ))}
                 </select>
@@ -368,6 +342,22 @@ export default function AssignWali() {
                 </select>
               </div>
 
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="is_primary"
+                  name="is_primary"
+                  checked={form.is_primary}
+                  onChange={handleChange}
+                  className="w-4 h-4 text-indigo-600"
+                  disabled={loading || submitting}
+                />
+                <label htmlFor="is_primary" className="text-sm text-gray-700 flex items-center gap-1">
+                  <Star className="w-4 h-4 text-amber-500" />
+                  Jadikan Wali Kelas Utama
+                </label>
+              </div>
+
               {err && <div className="text-red-600 text-sm">{err}</div>}
               {msg && <div className="text-green-600 text-sm">{msg}</div>}
 
@@ -386,7 +376,7 @@ export default function AssignWali() {
                 <button
                   type="button"
                   onClick={() => {
-                    setForm({ guru_id: "", kelas_id: "" });
+                    setForm({ guru_id: "", kelas_id: "", is_primary: false });
                     setErr(null);
                     setMsg(null);
                   }}
@@ -399,15 +389,16 @@ export default function AssignWali() {
             </form>
           </div>
 
-          {/* Wali list (Menggabungkan tampilan Kode 1 dengan logika data dan fitur filter/search Kode 2) */}
+          {/* List */}
           <div className="col-span-2 bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
               <div>
-                <div className="text-lg font-medium">Daftar Wali Kelas Berdasarkan Kelas</div>
-                <div className="text-xs text-gray-500">Menampilkan status wali untuk setiap kelas.</div>
+                <div className="text-lg font-medium">Daftar Wali Kelas</div>
+                <div className="text-xs text-gray-500">
+                  <Star className="inline w-3 h-3 text-amber-500" /> = Wali Utama
+                </div>
               </div>
 
-              {/* Search dan Filter dari Kode 2 */}
               <div className="flex items-center gap-3 w-full sm:w-auto">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -420,77 +411,85 @@ export default function AssignWali() {
                 </div>
 
                 <button
-                  onClick={() => {
-                    setFilterNoWali((v) => !v);
-                  }}
+                  onClick={() => setFilterNoWali((v) => !v)}
                   className={`px-3 py-2 rounded-lg border text-sm whitespace-nowrap ${
                     filterNoWali ? "bg-indigo-600 text-white" : "bg-white text-gray-700"
                   }`}
                 >
-                  {filterNoWali ? "Dengan Wali" : "Tanpa Wali"}
+                  {filterNoWali ? "Semua" : "Tanpa Wali"}
                 </button>
               </div>
             </div>
 
             {loading ? (
-              <div className="p-6 text-center text-gray-600">Memuat daftar wali...</div>
+              <div className="p-6 text-center text-gray-600">Memuat...</div>
             ) : visibleRows.length === 0 ? (
-              <div className="p-6 text-center text-gray-500">Tidak ada kelas sesuai filter.</div>
+              <div className="p-6 text-center text-gray-500">Tidak ada kelas.</div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {visibleRows.map((r) => {
-                  const wk = r.wali; // wali record
-                  const guruNama = wk?.guru?.nama ?? wk?.guru?.user?.name ?? wk?.guru?.user?.email ?? null;
-                  return (
-                    <div
-                      key={r.kelas.id}
-                      className="border rounded-lg p-4 flex items-center justify-between"
-                    >
+              <div className="space-y-4">
+                {visibleRows.map((r) => (
+                  <div key={r.kelas.id} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-semibold">
-                          {(r.kelas.nama || "K").slice(0, 1).toUpperCase()}
+                          {(r.kelas.nama || "K")[0].toUpperCase()}
                         </div>
                         <div>
-                          <div className="font-medium text-gray-900">
-                            {r.kelas.nama}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {wk ? (
-                              <span>
-                                Wali: <span className="font-medium text-gray-700">{guruNama}</span>
-                              </span>
-                            ) : (
-                              <span className="italic text-gray-500">Belum ada wali</span>
-                            )}
-                          </div>
-                          <div className="text-xs text-gray-400 mt-1">
-                            {wk?.tahunAjaran ? wk.tahunAjaran.nama : ""}
+                          <div className="font-medium text-gray-900">{r.kelas.nama}</div>
+                          <div className="text-xs text-gray-500">
+                            {r.wali_list.length} wali kelas
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        {wk ? (
-                          <button
-                            onClick={() => handleUnassign(wk)}
-                            className="px-3 py-2 bg-red-50 border border-red-200 text-red-600 rounded-md hover:bg-red-100 flex items-center gap-2 text-sm"
-                            disabled={submitting}
-                          >
-                            <Trash2 className="w-4 h-4" /> Unassign
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => setForm((p) => ({ ...p, kelas_id: String(r.kelas.id) }))}
-                            className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center gap-2 text-sm"
-                            disabled={submitting}
-                          >
-                            <UserPlus className="w-4 h-4" /> Assign
-                          </button>
-                        )}
-                      </div>
+                      <button
+                        onClick={() => setForm((p) => ({ ...p, kelas_id: String(r.kelas.id) }))}
+                        className="px-3 py-2 bg-indigo-50 border border-indigo-200 text-indigo-600 rounded-md hover:bg-indigo-100 flex items-center gap-2 text-sm"
+                      >
+                        <UserPlus className="w-4 h-4" /> Tambah Wali
+                      </button>
                     </div>
-                  );
-                })}
+
+                    {r.wali_list.length > 0 ? (
+                      <div className="space-y-2 pl-13">
+                        {r.wali_list.map((w) => (
+                          <div
+                            key={w.id}
+                            className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-md"
+                          >
+                            <div className="flex items-center gap-2">
+                              {w.is_primary ? (
+                                <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                              ) : (
+                                <UserCheck className="w-4 h-4 text-gray-400" />
+                              )}
+                              <span className="text-sm">
+                                {w.guru?.nama ?? w.guru?.user?.name ?? "?"}
+                              </span>
+                              {w.is_primary && (
+                                <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded">
+                                  Utama
+                                </span>
+                              )}
+                            </div>
+
+                            <button
+                              onClick={() => handleUnassign(w)}
+                              className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+                              disabled={submitting}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-3 text-gray-500 text-sm italic">
+                        Belum ada wali kelas
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </div>

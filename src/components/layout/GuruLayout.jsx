@@ -1,7 +1,7 @@
 // src/components/layout/GuruLayout.jsx
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, ClipboardList, Clipboard, User, LogOut, Menu, X, Key, ChevronDown, BookImage, Newspaper, UserStar, Calendar, HelpCircle } from "lucide-react";
+import { Home, ClipboardList, Clipboard, User, LogOut, Menu, X, Key, ChevronDown, BookImage, Newspaper, UserStar, Calendar, HelpCircle, History } from "lucide-react";
 import { logout as serviceLogout } from "../../_services/auth"; 
 import ProfileModal from "../ProfileModal";
 import ChangePasswordModal from "../ChangePasswordModal";
@@ -109,6 +109,7 @@ export default function GuruLayout({ children }) {
         { icon: Clipboard, label: "Pengolahan Nilai", to: "/guru/nilai-detail" },
         { icon: UserStar, label: "Nilai Sikap", to: "/guru/nilai-sikap" },
         { icon: Calendar, label: "Jadwal", to: "/guru/jadwal" },
+        { icon: History, label: "History Nilai", to: "/guru/nilai-history" },
       ]
     },
     { 

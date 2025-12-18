@@ -27,6 +27,7 @@ import GuruForm from "./pages/admin/Guru/GuruForm";
 import GuruList from "./pages/admin/Guru/GuruList";
 import AssignWali from "./pages/admin/WaliKelas/AssignWali";
 import TahunAjaranIndex from "./pages/admin/TahunAjaran/TahunAjaranIndex";
+import NilaiHistoryPage from "./pages/guru/nilai_history/NilaiHistoryPage";
 
 import GuruEdit from "./pages/admin/Guru/GuruEdit";
 import MapelList from "./pages/admin/Mapel/MapelList";
@@ -54,6 +55,7 @@ import GalleryDashboardAdmin from "./pages/admin/Berita/GalleryDashboardAdmin";
 import JadwalDashboard from "./pages/guru/jadwal/JadwalDashboard";
 import DashboardNilai from "./pages/guru/nilai/DashboardNilai";
 import SiswaJadwal from "./pages/public/SiswaJadwal";
+import AdminEdit from "./pages/admin/Admin/AdminEdit";
 
 
 export default function App() {
@@ -273,6 +275,16 @@ export default function App() {
               }
             />
 
+            {/* Admin: ganti password */}
+            <Route
+              path="/admin/admins/edit/:id"
+              element={
+                <RoleProtectedRoute allowed={["admin"]}>
+                  <AdminEdit />
+                </RoleProtectedRoute>
+              }
+            />
+
             {/* Admin: reset password */}
             <Route
               path="/admin/admins/reset-password/:id"
@@ -419,6 +431,15 @@ export default function App() {
               element={
                 <RoleProtectedRoute allowed={["guru"]}>
                   <GalleryDashboard />
+                </RoleProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/guru/nilai-history"
+              element={
+                <RoleProtectedRoute allowed={["guru"]}>
+                  <NilaiHistoryPage />
                 </RoleProtectedRoute>
               }
             />

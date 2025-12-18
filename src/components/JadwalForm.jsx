@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import jadwalService from "../_services/jadwal";
+import Swal from "sweetalert2";
 
 const HARI_OPTIONS = [
   { value: "senin", label: "Senin" },
@@ -71,7 +72,11 @@ const JadwalForm = ({ kelasId, existingJadwal, onSuccess, onCancel }) => {
       }
     } catch (error) {
       console.error("Error loading initial data:", error);
-      alert("Gagal memuat data. Silakan refresh halaman.");
+      await Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: "Gagal memuat data. Silakan refresh halaman.",
+      });
     }
   };
 
@@ -163,15 +168,26 @@ const JadwalForm = ({ kelasId, existingJadwal, onSuccess, onCancel }) => {
     });
   };
 
-  const copyFromOtherDay = (targetHari, sourceHari) => {
-    if (
-      window.confirm(
-        `Copy jadwal dari ${sourceHari} ke ${targetHari}? Jadwal ${targetHari} yang ada akan ditimpa.`
-      )
-    ) {
+  // use async so we can await the Swal confirmation
+  const copyFromOtherDay = async (targetHari, sourceHari) => {
+    const result = await Swal.fire({
+      title: "Konfirmasi",
+      text: `Copy jadwal dari ${sourceHari} ke ${targetHari}? Jadwal ${targetHari} yang ada akan ditimpa.`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Ya, copy",
+      cancelButtonText: "Batal",
+    });
+
+    if (result.isConfirmed) {
       setSlotsByHari({
         ...slotsByHari,
         [targetHari]: [...slotsByHari[sourceHari]],
+      });
+      await Swal.fire({
+        icon: "success",
+        title: "Berhasil",
+        text: `Jadwal ${sourceHari} telah disalin ke ${targetHari}.`,
       });
     }
   };
@@ -181,7 +197,11 @@ const JadwalForm = ({ kelasId, existingJadwal, onSuccess, onCancel }) => {
 
     // Validate
     if (!formData.semester_id || !formData.tahun_ajaran_id) {
-      alert("Semester dan Tahun Ajaran harus dipilih!");
+      await Swal.fire({
+        icon: "warning",
+        title: "Validasi",
+        text: "Semester dan Tahun Ajaran harus dipilih!",
+      });
       return;
     }
 
@@ -189,71 +209,110 @@ const JadwalForm = ({ kelasId, existingJadwal, onSuccess, onCancel }) => {
     const allSlots = [];
     let globalUrutan = 1;
 
-    HARI_OPTIONS.forEach(({ value: hari }) => {
-      slotsByHari[hari].forEach((slot) => {
-        // Validate slot
-        if (!slot.jam_mulai || !slot.jam_selesai) {
-          alert(`Slot di ${hari} memiliki jam yang tidak lengkap!`);
-          throw new Error("Invalid slot");
-        }
-
-        if (slot.tipe_slot === "pelajaran" && !slot.mapel_id) {
-          alert(`Slot pelajaran di ${hari} harus memilih mapel!`);
-          throw new Error("Invalid slot");
-        }
-
-        if (slot.tipe_slot === "istirahat" && !slot.keterangan) {
-          alert(`Slot istirahat di ${hari} harus memiliki keterangan!`);
-          throw new Error("Invalid slot");
-        }
-
-        allSlots.push({
-          hari,
-          jam_mulai: slot.jam_mulai,
-          jam_selesai: slot.jam_selesai,
-          tipe_slot: slot.tipe_slot,
-          mapel_id: slot.tipe_slot === "pelajaran" ? slot.mapel_id : null,
-          keterangan:
-            slot.tipe_slot === "istirahat" ? slot.keterangan : null,
-          urutan: globalUrutan++,
-        });
-      });
-    });
-
-    if (allSlots.length === 0) {
-      alert("Minimal harus ada 1 slot jadwal!");
-      return;
-    }
-
-    const payload = {
-      ...formData,
-      slots: allSlots,
-    };
-
-    setLoading(true);
-
     try {
-      if (existingJadwal) {
-        await jadwalService.updateJadwal(
-          kelasId,
-          existingJadwal.jadwal.id,
-          payload
-        );
-        alert("Jadwal berhasil diupdate!");
-      } else {
-        await jadwalService.createJadwal(kelasId, payload);
-        alert("Jadwal berhasil dibuat!");
+      for (const hariObj of HARI_OPTIONS) {
+        const hari = hariObj.value;
+        const slots = slotsByHari[hari] || [];
+
+        for (const slot of slots) {
+          // Validate slot
+          if (!slot.jam_mulai || !slot.jam_selesai) {
+            await Swal.fire({
+              icon: "warning",
+              title: "Validasi",
+              text: `Slot di ${hari} memiliki jam yang tidak lengkap!`,
+            });
+            return;
+          }
+
+          if (slot.tipe_slot === "pelajaran" && !slot.mapel_id) {
+            await Swal.fire({
+              icon: "warning",
+              title: "Validasi",
+              text: `Slot pelajaran di ${hari} harus memilih mapel!`,
+            });
+            return;
+          }
+
+          if (slot.tipe_slot === "istirahat" && !slot.keterangan) {
+            await Swal.fire({
+              icon: "warning",
+              title: "Validasi",
+              text: `Slot istirahat di ${hari} harus memiliki keterangan!`,
+            });
+            return;
+          }
+
+          allSlots.push({
+            hari,
+            jam_mulai: slot.jam_mulai,
+            jam_selesai: slot.jam_selesai,
+            tipe_slot: slot.tipe_slot,
+            mapel_id: slot.tipe_slot === "pelajaran" ? slot.mapel_id : null,
+            keterangan: slot.tipe_slot === "istirahat" ? slot.keterangan : null,
+            urutan: globalUrutan++,
+          });
+        }
       }
 
-      if (onSuccess) onSuccess();
-    } catch (error) {
-      console.error("Error saving jadwal:", error);
-      alert(
-        error.response?.data?.message ||
-          "Gagal menyimpan jadwal. Silakan coba lagi."
-      );
-    } finally {
-      setLoading(false);
+      if (allSlots.length === 0) {
+        await Swal.fire({
+          icon: "warning",
+          title: "Validasi",
+          text: "Minimal harus ada 1 slot jadwal!",
+        });
+        return;
+      }
+
+      const payload = {
+        ...formData,
+        slots: allSlots,
+      };
+
+      setLoading(true);
+
+      try {
+        if (existingJadwal) {
+          await jadwalService.updateJadwal(
+            kelasId,
+            existingJadwal.jadwal.id,
+            payload
+          );
+          await Swal.fire({
+            icon: "success",
+            title: "Berhasil",
+            text: "Jadwal berhasil diupdate!",
+          });
+        } else {
+          await jadwalService.createJadwal(kelasId, payload);
+          await Swal.fire({
+            icon: "success",
+            title: "Berhasil",
+            text: "Jadwal berhasil dibuat!",
+          });
+        }
+
+        if (onSuccess) onSuccess();
+      } catch (error) {
+        console.error("Error saving jadwal:", error);
+        await Swal.fire({
+          icon: "error",
+          title: "Gagal",
+          text:
+            error?.response?.data?.message ||
+            "Gagal menyimpan jadwal. Silakan coba lagi.",
+        });
+      } finally {
+        setLoading(false);
+      }
+    } catch (err) {
+      // safety catch for unexpected errors
+      console.error(err);
+      await Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Terjadi kesalahan. Silakan coba lagi.",
+      });
     }
   };
 
@@ -373,9 +432,9 @@ const JadwalForm = ({ kelasId, existingJadwal, onSuccess, onCancel }) => {
             <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
               {/* Copy from other day */}
               <select
-                onChange={(e) => {
+                onChange={async (e) => {
                   if (e.target.value) {
-                    copyFromOtherDay(activeHari, e.target.value);
+                    await copyFromOtherDay(activeHari, e.target.value);
                     e.target.value = "";
                   }
                 }}
