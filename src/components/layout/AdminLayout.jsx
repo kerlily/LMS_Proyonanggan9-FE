@@ -17,7 +17,8 @@ import {
   Newspaper,
   ChevronDown,
   ChevronRight,
-  HelpCircle ,
+  HelpCircle, 
+  FileChartLine,
 } from "lucide-react";
 import { logout as serviceLogout } from "../../_services/auth";
 import ProfileModal from "../ProfileModal";
@@ -125,6 +126,7 @@ export default function AdminLayout({ children }) {
       items: [
         { icon: BookOpen, label: "Mapel", to: "/admin/mapel" },
         { icon: Calendar, label: "Tahun Ajaran", to: "/admin/tahun-ajaran" },
+        { icon: FileChartLine, label: "Laporan Nilai Kelas", to: "/admin/monitoring" },
       ]
     },
     { 

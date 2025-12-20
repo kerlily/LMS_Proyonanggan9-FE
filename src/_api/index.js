@@ -196,8 +196,8 @@ api.interceptors.response.use(
           localStorage.removeItem("userInfo");
           localStorage.removeItem("user");
           // Redirect admin/guru ke halaman login
-          if (window.location.pathname !== "/login") {
-            window.location.href = "/login";
+          if (window.location.pathname !== "/admin/login") {
+            window.location.href = "/admin/login";
           }
         }
         
@@ -223,8 +223,8 @@ api.interceptors.response.use(
         localStorage.removeItem("access_token");
         localStorage.removeItem("userInfo");
         localStorage.removeItem("user");
-        if (window.location.pathname !== "/login") {
-          window.location.href = "/login";
+        if (window.location.pathname !== "/admin/login") {
+          window.location.href = "/admin/login";
         }
       }
     }

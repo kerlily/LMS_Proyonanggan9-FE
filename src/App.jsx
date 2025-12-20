@@ -56,6 +56,8 @@ import JadwalDashboard from "./pages/guru/jadwal/JadwalDashboard";
 import DashboardNilai from "./pages/guru/nilai/DashboardNilai";
 import SiswaJadwal from "./pages/public/SiswaJadwal";
 import AdminEdit from "./pages/admin/Admin/AdminEdit";
+import MonitoringDashboard from "./pages/admin/Admin/MonitoringDashboard";
+import MonitoringDetail from "./pages/admin/Admin/MonitoringDetail";
 
 
 export default function App() {
@@ -348,6 +350,22 @@ export default function App() {
               element={
                 <RoleProtectedRoute allowed={["admin"]}>
                   <GalleryDashboardAdmin />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/monitoring"
+              element={
+                <RoleProtectedRoute allowed={["admin"]}>
+                  <MonitoringDashboard />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/monitoring/detail/:kelasId"
+              element={
+                <RoleProtectedRoute allowed={["admin"]}>
+                  <MonitoringDetail />
                 </RoleProtectedRoute>
               }
             />
