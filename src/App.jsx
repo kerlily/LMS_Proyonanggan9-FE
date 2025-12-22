@@ -58,6 +58,7 @@ import SiswaJadwal from "./pages/public/SiswaJadwal";
 import AdminEdit from "./pages/admin/Admin/AdminEdit";
 import MonitoringDashboard from "./pages/admin/Admin/MonitoringDashboard";
 import MonitoringDetail from "./pages/admin/Admin/MonitoringDetail";
+import TrashPage from "./pages/admin/Trash/TrashPage";
 
 
 export default function App() {
@@ -366,6 +367,15 @@ export default function App() {
               element={
                 <RoleProtectedRoute allowed={["admin"]}>
                   <MonitoringDetail />
+                </RoleProtectedRoute>
+              }
+            />
+
+             <Route
+              path="/admin/trash"
+              element={
+                <RoleProtectedRoute allowed={["admin"]}>
+                  <TrashPage />
                 </RoleProtectedRoute>
               }
             />

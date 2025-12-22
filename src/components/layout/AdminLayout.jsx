@@ -19,6 +19,7 @@ import {
   ChevronRight,
   HelpCircle, 
   FileChartLine,
+  ArchiveRestore,
 } from "lucide-react";
 import { logout as serviceLogout } from "../../_services/auth";
 import ProfileModal from "../ProfileModal";
@@ -118,6 +119,7 @@ export default function AdminLayout({ children }) {
         { icon: Users, label: "Siswa", to: "/admin/siswa" },
         { icon: GraduationCap, label: "Guru", to: "/admin/guru" },
         { icon: User, label: "Admin", to: "/admin/admins" },
+        { icon: ArchiveRestore, label: "Recovery User", to: "/admin/trash" },
       ]
     },
     { 
