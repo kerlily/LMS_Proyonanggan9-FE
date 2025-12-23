@@ -1,5 +1,5 @@
 // src/pages/admin/WaliKelas/AssignWali.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   assignWaliKelas,
   getGuruList,
@@ -26,6 +26,8 @@ const MySwal = withReactContent(Swal);
 
 export default function AssignWali() {
   const location = useLocation();
+  const fetchingRef = useRef(false);
+  const isMounted = useRef(true);
 
   const [gurus, setGurus] = useState([]);
   const [kelasList, setKelasList] = useState([]);
@@ -45,6 +47,13 @@ export default function AssignWali() {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
     const query = new URLSearchParams(location.search);
     const kelas_id = query.get("kelas_id");
     if (kelas_id) {
@@ -53,14 +62,25 @@ export default function AssignWali() {
   }, [location.search]);
 
   async function fetchAll() {
+    // Prevent concurrent fetches
+    if (fetchingRef.current) {
+      console.log('⚠️ Fetch already in progress, skipping...');
+      return;
+    }
+
+    fetchingRef.current = true;
     setLoading(true);
     setErr(null);
+    
     try {
       const [gRes, kRes, wRes] = await Promise.allSettled([
         getGuruList({ per_page: 500 }),
         getKelasList(),
         listWaliKelas(),
       ]);
+
+      // Only update state if component is still mounted
+      if (!isMounted.current) return;
 
       const gItems = gRes.status === "fulfilled"
         ? Array.isArray(gRes.value.data)
@@ -82,10 +102,16 @@ export default function AssignWali() {
           : wRes.value.data?.data ?? []
         : [];
 
+      console.log('✅ Data fetched:', {
+        gurus: gItems.length,
+        kelas: kItems.length,
+        wali: wItems.length
+      });
+
       // Group wali by kelas_id
       const waliByKelas = {};
       wItems.forEach((w) => {
-        const kid = w?.kelas?.id ?? w?.kelas_id;
+        const kid = Number(w?.kelas?.id ?? w?.kelas_id);
         if (kid) {
           if (!waliByKelas[kid]) waliByKelas[kid] = [];
           waliByKelas[kid].push(w);
@@ -97,21 +123,30 @@ export default function AssignWali() {
         waliByKelas[kid].sort((a, b) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0));
       });
 
-      const merged = kItems.map((k) => ({
-        kelas: {
-          id: k.id,
-          nama: k.nama ?? `${k.tingkat ?? ""} ${k.section ?? ""}`.trim(),
-          tingkat: k.tingkat,
-          section: k.section,
-        },
-        wali_list: waliByKelas[k.id] ?? [],
-      }));
+      // Use Map to ensure unique kelas
+      const kelasMap = new Map();
 
-      // Add kelas from wali that not in kItems
+      // Process all kelas from kItems
+      kItems.forEach((k) => {
+        const kelasId = Number(k.id);
+        if (kelasId && !kelasMap.has(kelasId)) {
+          kelasMap.set(kelasId, {
+            kelas: {
+              id: kelasId,
+              nama: k.nama ?? `${k.tingkat ?? ""} ${k.section ?? ""}`.trim(),
+              tingkat: k.tingkat,
+              section: k.section,
+            },
+            wali_list: waliByKelas[kelasId] ?? [],
+          });
+        }
+      });
+
+      // Add kelas from wali that might not be in kItems
       wItems.forEach((w) => {
-        const kid = w?.kelas?.id ?? w?.kelas_id;
-        if (kid && !merged.find((r) => r.kelas.id === kid)) {
-          merged.push({
+        const kid = Number(w?.kelas?.id ?? w?.kelas_id);
+        if (kid && !kelasMap.has(kid)) {
+          kelasMap.set(kid, {
             kelas: {
               id: kid,
               nama: w.kelas?.nama ?? `Kls ${kid}`,
@@ -123,6 +158,10 @@ export default function AssignWali() {
         }
       });
 
+      // Convert Map to Array
+      const merged = Array.from(kelasMap.values());
+
+      // Sort by tingkat, then section
       merged.sort((a, b) => {
         const ta = a.kelas.tingkat ?? 0;
         const tb = b.kelas.tingkat ?? 0;
@@ -132,18 +171,29 @@ export default function AssignWali() {
         return (a.kelas.nama ?? "").localeCompare(b.kelas.nama ?? "");
       });
 
-      setRows(merged);
+      console.log('✅ Final merged kelas:', merged.length);
+      console.log('Kelas IDs:', merged.map(m => `${m.kelas.id}:${m.kelas.nama}`));
+
+      if (isMounted.current) {
+        setRows(merged);
+      }
     } catch (e) {
       console.error("fetchAll error", e);
-      setErr("Gagal memuat data.");
+      if (isMounted.current) {
+        setErr("Gagal memuat data.");
+      }
     } finally {
-      setLoading(false);
+      if (isMounted.current) {
+        setLoading(false);
+      }
+      fetchingRef.current = false;
     }
   }
 
+  // Only fetch once on mount
   useEffect(() => {
     fetchAll();
-  }, []);
+  }, []); // Empty dependency array
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -287,8 +337,9 @@ export default function AssignWali() {
               fetchAll();
             }}
             className="px-3 py-2 border rounded bg-white hover:bg-gray-50 text-sm flex items-center gap-2"
+            disabled={loading}
           >
-            <RefreshCw className="w-4 h-4" /> Refresh
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
           </button>
         </div>
 

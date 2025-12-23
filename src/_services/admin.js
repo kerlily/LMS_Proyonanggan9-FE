@@ -58,9 +58,6 @@ export const getGuruList = (params = {}) => {
 export const getKelasList = (params = {}) => {
   return api.get("/admin/kelas-mapel/statistics", { params })
     .then(res => {
-      // normalisasi: komponen biasanya membaca res.data atau res.data.data
-      // kita kembalikan object shape supaya komponen yang sudah expecting res.data tetap work:
-      // res.data -> array
       return { data: res?.data?.statistics ?? res?.data?.data ?? res?.data ?? [] };
     });
 };
