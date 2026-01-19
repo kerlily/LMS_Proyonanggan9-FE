@@ -1,8 +1,9 @@
-// src/pages/guru/hitung_nilai/NilaiDetailDashboard.jsx - DEBUG VERSION
-import React, { useEffect, useState } from "react";
+// src/pages/guru/hitung_nilai/NilaiDetailDashboard.jsx 
+import React, { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom"; 
 import { 
-  CheckCircle, XCircle, Calculator, Save, RefreshCw, 
-  TrendingUp, Users, Clock, Plus
+  CheckCircle, XCircle, Calculator, RefreshCw, 
+  TrendingUp, Users, Clock, Plus, Eye
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import GuruLayout from "../../../components/layout/GuruLayout";
@@ -36,6 +37,7 @@ const StatCard = ({ icon: Icon, title, value, subtitle, color = "blue" }) => (
 );
 
 export default function NilaiDetailDashboard() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [tahunAjaran, setTahunAjaran] = useState(null);
   const [assignments, setAssignments] = useState([]);
@@ -53,7 +55,95 @@ export default function NilaiDetailDashboard() {
   const [generating, setGenerating] = useState(false);
   const [generateSummary, setGenerateSummary] = useState(null);
   const [error, setError] = useState(null);
-  
+
+  const fetchProgress = useCallback(async () => {
+    if (!kelasId || !selectedStruktur) return;
+    
+    try {
+      const res = await getProgress(kelasId, selectedStruktur.id);
+      setProgress(res);
+    } catch (err) {
+      console.error("❌ fetchProgress error:", err);
+    }
+  }, [kelasId, selectedStruktur]);
+
+  const fetchNilaiDetail = useCallback(async (strukturId) => {
+    if (!kelasId || !strukturId) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const res = await getNilaiDetail(kelasId, strukturId);
+      const payload = res?.data ?? res;
+
+      if (payload?.struktur) {
+        setSelectedStruktur(payload.struktur);
+      }
+
+      const rowsArray = Array.isArray(payload?.data) ? payload.data
+                        : Array.isArray(payload) ? payload
+                        : [];
+
+      const normalizeRow = (r) => {
+        const nd = r?.nilai_data;
+        let nilaiObj = {};
+        if (nd == null) {
+          nilaiObj = {};
+        } else if (typeof nd === "string") {
+          try {
+            nilaiObj = JSON.parse(nd);
+          } catch (e) {
+            nilaiObj = {};
+            console.warn("Failed parse nilai_data for siswa:", r.siswa_id, e);
+          }
+        } else if (Array.isArray(nd)) {
+          nilaiObj = {};
+        } else if (typeof nd === "object") {
+          nilaiObj = nd;
+        } else {
+          nilaiObj = {};
+        }
+
+        return { ...r, nilai_data: nilaiObj };
+      };
+
+      const finalRows = rowsArray.map(normalizeRow);
+      setRows(finalRows);
+      setEdited({});
+    } catch (err) {
+      console.error("❌ fetchNilaiDetail error:", err);
+      setError("Gagal mengambil data nilai detail");
+      setRows([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [kelasId]);
+
+  const fetchStruktur = useCallback(async () => {
+    if (!kelasId || !selectedSemester) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const res = await getStrukturNilai(kelasId, { semester_id: selectedSemester.id });
+      const payload = res?.data ?? res;
+      const list = Array.isArray(payload) ? payload : (payload?.data ?? payload ?? []);
+      setStrukturList(Array.isArray(list) ? list : []);
+
+      if (Array.isArray(list) && list.length === 1) {
+        setSelectedStruktur(list[0]);
+        fetchNilaiDetail(list[0].id);
+      }
+    } catch (err) {
+      console.error("❌ fetchStruktur error:", err);
+      setError("Gagal mengambil struktur nilai. Pastikan struktur sudah dibuat.");
+      setStrukturList([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [kelasId, selectedSemester, fetchNilaiDetail]);
 
   useEffect(() => {
     fetchInitialData();
@@ -63,13 +153,13 @@ export default function NilaiDetailDashboard() {
     if (kelasId && selectedSemester) {
       fetchStruktur();
     }
-  }, [kelasId, selectedSemester]);
+  }, [kelasId, selectedSemester, fetchStruktur]);
 
   useEffect(() => {
     if (selectedStruktur) {
       fetchProgress();
     }
-  }, [selectedStruktur]);
+  }, [selectedStruktur, fetchProgress]);
 
   const fetchInitialData = async () => {
     try {
@@ -130,33 +220,6 @@ export default function NilaiDetailDashboard() {
     setError(null);
   };
 
-const fetchStruktur = async () => {
-  if (!kelasId || !selectedSemester) return;
-
-  try {
-    setLoading(true);
-    setError(null);
-
-    const res = await getStrukturNilai(kelasId, { semester_id: selectedSemester.id });
-    // res may be axios response or already data; handle both
-    const payload = res?.data ?? res;
-    // payload may be { data: [ ... ] } or array directly
-    const list = Array.isArray(payload) ? payload : (payload?.data ?? payload ?? []);
-    setStrukturList(Array.isArray(list) ? list : []);
-
-    if (Array.isArray(list) && list.length === 1) {
-      setSelectedStruktur(list[0]);
-      fetchNilaiDetail(list[0].id);
-    }
-  } catch (err) {
-    console.error("❌ fetchStruktur error:", err);
-    setError("Gagal mengambil struktur nilai. Pastikan struktur sudah dibuat.");
-    setStrukturList([]);
-  } finally {
-    setLoading(false);
-  }
-};
-
   const onSelectStruktur = (id) => {
     const s = strukturList.find((x) => String(x.id) === String(id));
     setSelectedStruktur(s || null);
@@ -170,164 +233,47 @@ const fetchStruktur = async () => {
     }
   };
 
- const fetchNilaiDetail = async (strukturId) => {
-  if (!kelasId || !strukturId) return;
-
-  try {
-    setLoading(true);
-    setError(null);
-
-    const res = await getNilaiDetail(kelasId, strukturId);
-    // res may be axios response: res.data === { struktur: {...}, data: [...] }
-    const payload = res?.data ?? res;
-
-    // Extract struktur from payload if present (keamanan: keep server-provided struktur)
-    if (payload?.struktur) {
-      // some responses wrap struktur inside payload.struktur
-      setSelectedStruktur(payload.struktur);
-    }
-
-    // Extract rows array
-    const rowsArray = Array.isArray(payload?.data) ? payload.data
-                      : Array.isArray(payload) ? payload
-                      : [];
-
-    // Normalize nilai_data per row:
-    const normalizeRow = (r) => {
-      const nd = r?.nilai_data;
-      let nilaiObj = {};
-      if (nd == null) {
-        nilaiObj = {};
-      } else if (typeof nd === "string") {
-        try {
-          nilaiObj = JSON.parse(nd);
-        } catch (e) {
-          console.warn("⚠️ Failed parse nilai_data string, fallback to {} for siswa:", r.siswa_id, e);
-          nilaiObj = {};
-        }
-      } else if (Array.isArray(nd)) {
-        // fallback if backend returns empty array
-        nilaiObj = {};
-      } else if (typeof nd === "object") {
-        nilaiObj = nd;
-      } else {
-        nilaiObj = {};
-      }
-
-      return { ...r, nilai_data: nilaiObj };
-    };
-
-    const finalRows = rowsArray.map(normalizeRow);
-
-
-    setRows(finalRows);
-    setEdited({});
-  } catch (err) {
-    console.error("❌ fetchNilaiDetail error:", err);
-    setError("Gagal mengambil data nilai detail");
-    setRows([]);
-  } finally {
-    setLoading(false);
-  }
-};
-
-  const fetchProgress = async () => {
-    if (!kelasId || !selectedStruktur) return;
-    
-    try {
-      const res = await getProgress(kelasId, selectedStruktur.id);
-      setProgress(res);
-    } catch (err) {
-      console.error("❌ fetchProgress error:", err);
-    }
-  };
-
   const openForm = (row) => {
     setOpenRow(row);
   };
 
   const handleSaveRow = async (saveData) => {
-  
-  try {
-    // Update UI langsung
-    setEdited((p) => ({ ...p, [saveData.siswa_id]: saveData.nilai_data }));
-    setRows((prev) =>
-      prev.map((r) => 
-        r.siswa_id === saveData.siswa_id 
-          ? { ...r, nilai_data: saveData.nilai_data } 
-          : r
-      )
-    );
-    
-    // ✅ OPTIONAL: Juga save ke backend via bulk (jika ingin tetap pakai bulk)
-    const payload = {
-      data: [{
-        siswa_id: saveData.siswa_id,
-        nilai_data: saveData.nilai_data
-      }]
-    };
-    
-    await postNilaiDetailBulk(kelasId, selectedStruktur.id, payload);
-    
-    setOpenRow(null);
-    fetchProgress(); // Refresh progress
-  } catch (error) {
-    console.error("❌ Error in handleSaveRow:", error);
-    alert("Gagal menyimpan: " + (error.response?.data?.message || error.message));
-  }
-};
-
-const handleSaveAll = async () => {
-  if (!selectedStruktur || !kelasId) {
-    alert("Pilih kelas dan struktur terlebih dahulu.");
-    return;
-  }
-
-  const safeParse = (v) => {
-    if (!v) return {};
-    if (typeof v === "object") return v;
     try {
-      return JSON.parse(v);
-    } catch {
-      return {};
+      setSaving(true);
+      
+      const payload = {
+        data: [{
+          siswa_id: saveData.siswa_id,
+          nilai_data: saveData.nilai_data
+        }]
+      };
+      
+      await postNilaiDetailBulk(kelasId, selectedStruktur.id, payload);
+      
+      setRows((prev) =>
+        prev.map((r) => 
+          r.siswa_id === saveData.siswa_id 
+            ? { ...r, nilai_data: saveData.nilai_data } 
+            : r
+        )
+      );
+      
+      setEdited((prev) => {
+        const newEdited = { ...prev };
+        delete newEdited[saveData.siswa_id];
+        return newEdited;
+      });
+      
+      await fetchProgress();
+      
+      setOpenRow(null);
+      setSaving(false);
+      
+    } catch (error) {
+      setSaving(false);
+      alert("Gagal menyimpan: " + (error.response?.data?.message || error.message));
     }
   };
-
-  const payloadArray = rows.map((r) => {
-    const edit = edited[Number(r.siswa_id)];
-    const nilaiData = edit ? edit : safeParse(r.nilai_data);
-
-
-    return {
-      siswa_id: Number(r.siswa_id),
-      nilai_data: nilaiData,
-    };
-  });
-
-
-  try {
-    setSaving(true);
-    setError(null);
-
-    const res = await postNilaiDetailBulk(
-      kelasId,
-      selectedStruktur.id,
-      { data: payloadArray }
-    );
-
-    console.log("✅ Save Response:", res);
-    alert("Berhasil menyimpan nilai.");
-
-    setEdited({});
-    fetchNilaiDetail(selectedStruktur.id);
-    fetchProgress();
-  } catch (err) {
-    setError(err?.response?.data?.message || "Gagal menyimpan nilai");
-  } finally {
-    setSaving(false);
-  }
-};
-
 
   const handleGenerate = async () => {
     if (!selectedStruktur || !kelasId) {
@@ -335,7 +281,7 @@ const handleSaveAll = async () => {
       return;
     }
     
-    if (!confirm("Generate nilai akhir akan menghitung dan menyimpan nilai akhir. Lanjutkan?")) {
+    if (!window.confirm("Generate nilai akhir akan menghitung dan menyimpan nilai akhir. Lanjutkan?")) {
       return;
     }
     
@@ -353,6 +299,16 @@ const handleSaveAll = async () => {
     } finally {
       setGenerating(false);
     }
+  };
+
+  const handleViewNilai = () => {
+    navigate("/guru/nilai-detail/view", {
+      state: {
+        kelasId: kelasId,
+        semesterId: selectedSemester.id,
+        strukturId: selectedStruktur.id,
+      }
+    });
   };
 
   const hasEdits = Object.keys(edited).length > 0;
@@ -531,20 +487,19 @@ const handleSaveAll = async () => {
                 {selectedStruktur && (
                   <div className="flex gap-3">
                     <button
-                      onClick={handleSaveAll}
-                      disabled={saving || !hasEdits}
-                      className="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
-                    >
-                      <Save className="w-4 h-4" />
-                      {saving ? "Menyimpan..." : `Simpan${hasEdits ? ` (${Object.keys(edited).length})` : ""}`}
-                    </button>
-                    <button
                       onClick={handleGenerate}
                       disabled={generating}
                       className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
                     >
                       <Calculator className="w-4 h-4" />
                       {generating ? "Processing..." : "Generate Nilai Akhir"}
+                    </button>
+                    <button
+                      onClick={handleViewNilai}
+                      className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors"
+                    >
+                      <Eye className="w-4 h-4" />
+                      Lihat Nilai
                     </button>
                   </div>
                 )}

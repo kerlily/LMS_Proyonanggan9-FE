@@ -628,9 +628,6 @@ export default function TahunAjaranIndex() {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="text-lg font-semibold text-gray-900">{ta.nama}</div>
-                    <div className="text-sm text-gray-600 mt-1">
-                      ID: <span className="text-gray-500">{ta.id}</span>
-                    </div>
                   </div>
                   <div className="text-right">
                     {ta.is_active && (

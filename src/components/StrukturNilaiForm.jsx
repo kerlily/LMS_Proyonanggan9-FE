@@ -1,6 +1,6 @@
-    // src/components/StrukturNilaiForm.jsx
-    import React, { useEffect, useState } from "react";
-    import { X, Plus, Trash2, Save } from "lucide-react";
+// src/components/StrukturNilaiForm.jsx
+import React, { useEffect, useState } from "react";
+import { X, Plus, Trash2, Save } from "lucide-react";
 import Swal from "sweetalert2";
 import { getAvailableMapels, createStruktur, updateStruktur } from "../_services/nilaiDetail";
 import { getMapelsByKelas } from "../_services/kelasMapel";
@@ -30,7 +30,6 @@ import { getMapelsByKelas } from "../_services/kelasMapel";
       if (editData) {
         setMapelId(editData.mapel_id);
         const str = editData.struktur || {};
-        console.log("📥 Edit data struktur:", str); // Debug
 
         let converted = [];
         if (str.lingkup_materi && Array.isArray(str.lingkup_materi)) {
@@ -72,8 +71,6 @@ import { getMapelsByKelas } from "../_services/kelasMapel";
             kolom_label: str.asas.kolom_label || "ASAS (UAS)"
           });
         }
-
-        console.log("🔄 Converted struktur:", converted);
         setStruktur(converted.length > 0 ? converted : struktur); // Fallback jika kosong
       } else {
         fetchAvailableMapels();
@@ -207,14 +204,12 @@ import { getMapelsByKelas } from "../_services/kelasMapel";
             formatif: lm.kolom.map(k => ({
               kolom_key: k.kolom_key,
               kolom_label: k.kolom_label
-            })) // ✅ Map tanpa tipe, sesuai API
+            }))
           })),
           aslim: aslimKolom,
           asas: asasKolom
         }
       };
-
-      console.log("🚀 Payload to send:", JSON.stringify(payload, null, 2)); // Debug dengan pretty print
 
       let res;
       if (editData) {

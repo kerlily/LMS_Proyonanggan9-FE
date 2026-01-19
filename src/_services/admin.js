@@ -27,8 +27,6 @@ export const showSiswa = (id) => {
 
 ///// GURU /////
 export const createGuru = (formData) => {
-  // formData: FormData with fields: nama,email,password,nip? no_hp? ,photo(file)
-  // Note: you said there is no 'nip' in JSON siswa — that's fine; guru may or may not include it.
   return api.post("/admin/guru", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });

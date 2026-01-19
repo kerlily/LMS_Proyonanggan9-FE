@@ -105,6 +105,12 @@ export default function SiswaList() {
         kelas_id: kelasArg || undefined,
         sort: sortArg || undefined,
       };
+      
+      if (kelasArg === "0") {
+        params.kelas_null = 1;
+      } else if (kelasArg !== "") {
+        params.kelas_id = kelasArg;
+      }
 
       const res = await listSiswa(params);
       const payload = res.data ?? {};
@@ -244,11 +250,8 @@ export default function SiswaList() {
       if (t) return `TA: ${t}`;
     }
 
-    // fallback: if item.kelas exists -> show current kelas
     if (item.kelas && item.kelas.nama) {
-      // optionally include tingkat/section
-      const sek = item.kelas.section ? ` ${item.kelas.section}` : "";
-      return `${item.kelas.nama}${sek}`;
+      return `${item.kelas.nama}`;
     }
 
     // fallback: kelas_saat_ini
@@ -311,9 +314,10 @@ export default function SiswaList() {
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm"
                 >
                   <option value="">Semua Kelas</option>
+                  <option value="0">Belum punya kelas</option>
                   {kelasList.map((k) => (
                     <option key={k.id} value={k.id}>
-                      {k.nama ?? `${k.tingkat ?? ""} ${k.section ?? ""}`.trim()}
+                      {k.nama ?? `${k.tingkat ?? ""}`.trim()}
                     </option>
                   ))}
                 </select>
@@ -349,6 +353,9 @@ export default function SiswaList() {
                     <th className="py-4 px-4 md:px-6 text-left text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wider border-b border-gray-200/50">
                       Nama Siswa
                     </th>
+                    <th className="py-4 px-4 md:px-6 text-left text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wider border-b border-gray-200/50 hidden md:table-cell">
+                      NISN
+                    </th>
                     <th className="py-4 px-4 md:px-6 text-left text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wider border-b border-gray-200/50">
                       Tahun Lahir
                     </th>
@@ -366,7 +373,7 @@ export default function SiswaList() {
                 <tbody className="divide-y divide-gray-200/50">
                   {loading ? (
                     <tr>
-                      <td colSpan={6} className="px-4 md:px-6 py-12 text-center">
+                      <td colSpan={7} className="px-4 md:px-6 py-12 text-center">
                         <div className="flex flex-col items-center justify-center">
                           <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
                           <p className="text-gray-600 text-base font-medium">Memuat data siswa...</p>
@@ -375,7 +382,7 @@ export default function SiswaList() {
                     </tr>
                   ) : siswa.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-4 md:px-6 py-12 text-center">
+                      <td colSpan={7} className="px-4 md:px-6 py-12 text-center">
                         <div className="flex flex-col items-center justify-center">
                           <div className="w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto mb-4">
                             <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -408,12 +415,21 @@ export default function SiswaList() {
                               </div>
                               <div>
                                 <div className="font-semibold text-gray-900 text-sm md:text-base">{s.nama}</div>
-                                {s.nis && (
-                                  <div className="text-xs text-gray-500 mt-0.5">NIS: {s.nis}</div>
+                                {/* keep nisn under name for small screens only */}
+                                {s.nisn && (
+                                  <div className="text-xs text-gray-500 mt-0.5 md:hidden">NISN: {s.nisn}</div>
                                 )}
                               </div>
                             </div>
                           </td>
+
+                          {/* NISN column - hidden on small screens (we show it under name for small screens) */}
+                          <td className="py-4 px-4 md:px-6 hidden md:table-cell">
+                            <div className="text-gray-700 text-sm md:text-base">
+                              {s.nisn ?? "-"}
+                            </div>
+                          </td>
+
                           <td className="py-4 px-4 md:px-6">
                             <div className="text-gray-700 text-sm md:text-base">
                               {s.tahun_lahir ? (

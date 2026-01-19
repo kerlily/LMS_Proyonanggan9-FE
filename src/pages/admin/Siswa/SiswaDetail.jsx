@@ -70,7 +70,7 @@ export default function SiswaDetail() {
     if (!siswa) return;
     const answer = await Swal.fire({
       title: `Hapus siswa "${siswa.nama}"?`,
-      text: "Semua data terkait (nilai, riwayat) akan dihapus. Tindakan ini tidak dapat dibatalkan.",
+      text: "Semua data terkait (nilai, riwayat) akan dihapus.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Ya, hapus",

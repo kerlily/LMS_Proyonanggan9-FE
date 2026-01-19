@@ -24,6 +24,7 @@ export default function SiswaEdit() {
   const [siswa, setSiswa] = useState(null);
   const [form, setForm] = useState({
     nama: "",
+    nisn: "",
     tahun_lahir: "",
     kelas_id: null,
     is_alumni: false,
@@ -48,6 +49,7 @@ export default function SiswaEdit() {
         setSiswa(s);
         setForm({
           nama: s.nama ?? "",
+          nisn: s.nisn ?? "",
           tahun_lahir: s.tahun_lahir ?? "",
           kelas_id: s.kelas_id ?? null,
           is_alumni: !!s.is_alumni,
@@ -60,7 +62,7 @@ export default function SiswaEdit() {
           if (Array.isArray(stats) && mounted) {
             const opts = stats.map((k) => ({
               id: k.id,
-              label: `${k.nama} — Tingkat ${k.tingkat}${k.section ? ` ${k.section}` : ""}`,
+              label: `${k.nama}`,
             }));
             setKelasOptions(opts);
           }

@@ -1,10 +1,10 @@
 // src/App.jsx
 import React from "react";
 import { Routes, Route, Link, useLocation } from "react-router-dom";
-import { User, School } from "lucide-react"; // Importing icons from lucide-react
-import MuridImage from "./assets/murid.jpeg"; // Importing student image
-import GuruImage from "./assets/guru.jpeg"; // Importing teacher image
-import DashboardImage from "./assets/dashboard.jpg"; // Importing dashboard image
+import { User, School } from "lucide-react"; 
+import MuridImage from "./assets/murid.jpeg"; 
+import GuruImage from "./assets/guru.jpeg";
+import DashboardImage from "./assets/dashboard.jpg"; 
 
 import HelpDocumentation from "./components/HelpDocumentation";
 
@@ -44,6 +44,7 @@ import NilaiAkhir from "./pages/guru/nilai/NilaiAkhir";
 import DashboardLog from "./pages/admin/log/DashboardLog";
 import NilaiDetailDashboard from "./pages/guru/hitung_nilai/NilaiDetailDashboard";
 import StrukturNilai from "./pages/guru/hitung_nilai/StrukturNilai";
+import NilaiDetailView from "./pages/guru/hitung_nilai/NilaiDetailView";
 
 import NilaiSikapAbsensiDashboard from "./pages/guru/hitung_nilai/NilaiSikapAbsensiDashboard";
 
@@ -404,6 +405,15 @@ export default function App() {
               element={
                 <RoleProtectedRoute allowed={["guru"]}>
                   <NilaiDetailDashboard />
+                </RoleProtectedRoute>
+              }
+            />
+
+             <Route
+              path="/guru/nilai-detail/view"
+              element={
+                <RoleProtectedRoute allowed={["guru"]}>
+                  <NilaiDetailView />
                 </RoleProtectedRoute>
               }
             />

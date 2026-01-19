@@ -6,7 +6,7 @@ import AdminLayout from "../../../components/layout/AdminLayout";
 
 export default function SiswaForm() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ nama: "", tahun_lahir: "", kelas_id: "" });
+  const [form, setForm] = useState({ nama: "", nisn: "", tahun_lahir: "", kelas_id: "" });
   const [kelas, setKelas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
@@ -25,7 +25,8 @@ export default function SiswaForm() {
     setErr(null);
     setSuccess(null);
 
-    if (!form.nama || !form.kelas_id) {
+    // Validasi: nama wajib, dan pastikan user sudah memilih ("" = belum pilih).
+    if (!form.nama || form.kelas_id === "") {
       return setErr("Nama dan Kelas wajib diisi.");
     }
 
@@ -33,13 +34,13 @@ export default function SiswaForm() {
     try {
       const payload = {
         nama: form.nama,
+        nisn: form.nisn || undefined,
         tahun_lahir: form.tahun_lahir ? Number(form.tahun_lahir) : undefined,
-        kelas_id: Number(form.kelas_id),
+        // Jika user pilih 'Belum punya kelas' (value "0"), kirim null agar backend tau belum ada kelas
+        kelas_id: form.kelas_id === "0" ? null : Number(form.kelas_id),
       };
       const res = await createSiswa(payload);
       setSuccess("Siswa berhasil dibuat.");
-      console.log("Created siswa:", res.data);
-      // optionally redirect to siswa list or detail
       setTimeout(() => navigate("/admin/siswa"), 800);
     } catch (error) {
       setErr(error?.response?.data?.message || "Gagal membuat siswa.");
@@ -51,43 +52,49 @@ export default function SiswaForm() {
 
   return (
     <AdminLayout>
-    <div className="p-6 max-w-2xl mx-auto bg-white rounded shadow">
-      <h2 className="text-xl font-semibold mb-4">Tambah Siswa Baru</h2>
+      <div className="p-6 max-w-2xl mx-auto bg-white rounded shadow">
+        <h2 className="text-xl font-semibold mb-4">Tambah Siswa Baru</h2>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium">Nama</label>
-          <input name="nama" value={form.nama} onChange={handleChange} className="w-full px-3 py-2 border rounded" />
-        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium">Nama</label>
+            <input name="nama" value={form.nama} onChange={handleChange} className="w-full px-3 py-2 border rounded" />
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium">Tahun Lahir</label>
-          <input name="tahun_lahir" value={form.tahun_lahir} onChange={handleChange} type="number" className="w-full px-3 py-2 border rounded" />
-        </div>
+          <div>
+            <label className="block text-sm font-medium">NISN</label>
+            <input name="nisn" value={form.nisn} onChange={handleChange} className="w-full px-3 py-2 border rounded" />
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium">Kelas</label>
-          <select name="kelas_id" value={form.kelas_id} onChange={handleChange} className="w-full px-3 py-2 border rounded">
-            <option value="">-- Pilih Kelas --</option>
-            {kelas.map((k) => (
-              <option key={k.id ?? k.value} value={k.id ?? k.value}>
-                {k.nama ?? k.name ?? k.tingkat ?? k.kelas}
-              </option>
-            ))}
-          </select>
-        </div>
+          <div>
+            <label className="block text-sm font-medium">Tahun Lahir</label>
+            <input name="tahun_lahir" value={form.tahun_lahir} onChange={handleChange} type="number" className="w-full px-3 py-2 border rounded" />
+          </div>
 
-        {err && <div className="text-red-600 text-sm">{err}</div>}
-        {success && <div className="text-green-600 text-sm">{success}</div>}
+          <div>
+            <label className="block text-sm font-medium">Kelas</label>
+            <select name="kelas_id" value={form.kelas_id} onChange={handleChange} className="w-full px-3 py-2 border rounded">
+              <option value="">-- Pilih Kelas --</option>
+              <option value="0">Belum punya kelas</option> {/* <-- opsi special */}
+              {kelas.map((k) => (
+                <option key={k.id ?? k.value} value={k.id ?? k.value}>
+                  {k.nama ?? k.name ?? k.tingkat ?? k.kelas}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <div className="flex gap-2">
-          <button type="submit" disabled={loading} className={`px-4 py-2 rounded text-white ${loading ? "bg-gray-400" : "bg-blue-600"}`}>
-            {loading ? "Menyimpan..." : "Simpan"}
-          </button>
-          <button type="button" onClick={() => navigate("/admin/siswa")} className="px-4 py-2 border rounded">Batal</button>
-        </div>
-      </form>
-    </div>
+          {err && <div className="text-red-600 text-sm">{err}</div>}
+          {success && <div className="text-green-600 text-sm">{success}</div>}
+
+          <div className="flex gap-2">
+            <button type="submit" disabled={loading} className={`px-4 py-2 rounded text-white ${loading ? "bg-gray-400" : "bg-blue-600"}`}>
+              {loading ? "Menyimpan..." : "Simpan"}
+            </button>
+            <button type="button" onClick={() => navigate("/admin/siswa")} className="px-4 py-2 border rounded">Batal</button>
+          </div>
+        </form>
+      </div>
     </AdminLayout>
   );
 }

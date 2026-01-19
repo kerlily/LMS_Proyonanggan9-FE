@@ -88,11 +88,9 @@ api.interceptors.response.use(
       // Update token yang sesuai
       if (isSiswaEndpoint) {
         localStorage.setItem("siswa_token", token);
-        console.log("✅ Siswa token auto-refreshed");
       } else {
         localStorage.setItem("token", token);
         localStorage.setItem("access_token", token);
-        console.log("✅ Admin token auto-refreshed");
       }
     }
     
@@ -103,12 +101,7 @@ api.interceptors.response.use(
     const errorCode = error.response?.data?.error_code;
     const status = error.response?.status;
     
-    console.error("🔴 Axios response error:", {
-      url: originalRequest?.url,
-      status,
-      errorCode,
-      message: error.response?.data?.message || error.message
-    });
+
 
     // Handle 401 dengan TOKEN_EXPIRED
     if (status === 401 && errorCode === 'TOKEN_EXPIRED' && !originalRequest._retry) {
@@ -148,7 +141,6 @@ api.interceptors.response.use(
           
           newToken = refreshResponse.data.access_token || refreshResponse.data.token;
           localStorage.setItem("siswa_token", newToken);
-          console.log("✅ Siswa token refreshed successfully");
         } else {
           // Refresh admin/guru token
           const adminToken = localStorage.getItem("token") || localStorage.getItem("access_token");
@@ -166,7 +158,6 @@ api.interceptors.response.use(
           newToken = refreshResponse.data.access_token || refreshResponse.data.token;
           localStorage.setItem("token", newToken);
           localStorage.setItem("access_token", newToken);
-          console.log("✅ Admin token refreshed successfully");
         }
 
         isRefreshing = false;

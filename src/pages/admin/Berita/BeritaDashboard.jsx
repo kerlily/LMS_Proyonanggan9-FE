@@ -248,7 +248,6 @@ export default function BeritaDashboardAdmin() {
 
                     <div className="flex items-center justify-between pt-3 border-t border-gray-200">
                       <div className="text-xs text-gray-500">
-                        ID: {berita.id}
                       </div>
                       <div className="flex items-center gap-2">
                         <button

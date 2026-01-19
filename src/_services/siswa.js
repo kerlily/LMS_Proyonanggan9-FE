@@ -44,8 +44,6 @@ export const loginSiswa = async ({ nama, kelas_id, password }) => {
         const expiryTime = Date.now() + (data.expires_in * 1000);
         localStorage.setItem("siswa_token_expires_at", expiryTime);
       }
-      
-      console.log(`✅ Siswa logged in. Token valid for ${data.expires_in_days || 14} days`);
     }
 
     if (user) {
@@ -55,7 +53,7 @@ export const loginSiswa = async ({ nama, kelas_id, password }) => {
 
     return data;
   } catch (error) {
-    console.error("❌ loginSiswa error:", error);
+    console.error("loginSiswa error");
     throw error;
   }
 };
@@ -68,7 +66,6 @@ export const logoutSiswa = async () => {
   try {
     // Notify server untuk blacklist token
     await api.post("/siswa/logout");
-    console.log("✅ Siswa logout successful");
   } catch (err) {
     console.warn("⚠️ logoutSiswa error (ignored):", err?.message || err);
   } finally {
@@ -110,8 +107,6 @@ export const refreshSiswaToken = async () => {
         const expiryTime = Date.now() + (data.expires_in * 1000);
         localStorage.setItem("siswa_token_expires_at", expiryTime);
       }
-      
-      console.log(`✅ Siswa token refreshed. Valid for ${data.expires_in_days || 14} days`);
     }
 
     if (user) {
@@ -134,7 +129,6 @@ export const checkSiswaToken = async () => {
     const { data } = await api.get("/siswa/check-token");
     
     if (data.success && data.valid) {
-      console.log(`ℹ️ Siswa token valid for ${data.remaining_days} more days`);
       return data;
     }
     
@@ -208,9 +202,6 @@ export const isSiswaTokenExpiringSoon = () => {
   return (expiry - now) < oneDayInMs;
 };
 
-// ===================================
-// EXISTING API CALLS (tidak berubah)
-// ===================================
 
 export const getKelas = () => api.get("/kelas");
 

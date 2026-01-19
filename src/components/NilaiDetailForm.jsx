@@ -1,42 +1,36 @@
-// src/components/NilaiDetailForm.jsx - FIXED WITH IMPROVED INPUT HANDLING
+// src/components/NilaiDetailForm.jsx
 import React, { useEffect, useState } from "react";
 import { X, Save, AlertCircle } from "lucide-react";
 
 export default function NilaiDetailForm({ open, onClose, row, struktur, onSave }) {
   const [values, setValues] = useState({});
   const [errors, setErrors] = useState({});
-  const [saving, setSaving] = useState(false); // ✅ Added to handle saving state
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!open || !row || !struktur) return;
 
     const initial = {};
 
-    // ✅ FIX: Handle array empty case - convert to object
     let nilaiData = row.nilai_data;
     if (Array.isArray(nilaiData)) {
       nilaiData = {};
     }
 
-  
-    // Format BARU: lingkup_materi, aslim, asas
     if (struktur.struktur?.lingkup_materi) {
       struktur.struktur.lingkup_materi.forEach((lm) => {
         const lmKey = lm.lm_key;
         
-        // Initialize LM object
         if (!initial[lmKey]) {
           initial[lmKey] = {};
         }
 
-        // Fill formatif values - gunakan nilaiData yang sudah diproses
         lm.formatif.forEach((fmt) => {
           const existing = nilaiData[lmKey]?.[fmt.kolom_key];
-          initial[lmKey][fmt.kolom_key] = existing !== undefined && existing !== null ? String(existing) : ""; // ✅ Convert to string for input
+          initial[lmKey][fmt.kolom_key] = existing !== undefined && existing !== null ? String(existing) : "";
         });
       });
 
-      // ASLIM & ASAS di root level - gunakan nilaiData yang sudah diproses
       const aslimKey = struktur.struktur.aslim?.kolom_key;
       const asasKey = struktur.struktur.asas?.kolom_key;
       
@@ -57,44 +51,38 @@ export default function NilaiDetailForm({ open, onClose, row, struktur, onSave }
 
   if (!open || !row) return null;
 
-const onChange = (key, value) => {
-  // allow empty or numbers with up to 2 decimals
-  const regex = /^\d*(\.\d{0,2})?$/;
-  if (value !== "" && !regex.test(value)) return;
+  const onChange = (key, value) => {
+    const regex = /^\d*(\.\d{0,2})?$/;
+    if (value !== "" && !regex.test(value)) return;
 
-  // cap to 100
-  const numValue = parseFloat(value);
-  const cappedValue = !isNaN(numValue) && numValue > 100 ? "100" : value;
+    const numValue = parseFloat(value);
+    const cappedValue = !isNaN(numValue) && numValue > 100 ? "100" : value;
 
-  setValues(prev => {
-    // deep clone prev to ensure React sees a new reference
-    // structuredClone is best if supported, fallback to JSON for older envs
-    let newValues;
-    try {
-      newValues = typeof structuredClone === "function" ? structuredClone(prev) : JSON.parse(JSON.stringify(prev));
-    } catch (err) {
-      console.log("⚠️ Failed to deep clone prev:", err);
-      newValues = { ...prev };
-    }
+    setValues(prev => {
+      let newValues;
+      try {
+        newValues = typeof structuredClone === "function" ? structuredClone(prev) : JSON.parse(JSON.stringify(prev));
+      } catch (err) {
+        newValues = { ...prev };
+        console.warn("structuredClone failed, using shallow copy:", err);
+      }
 
-    if (key.includes(".")) {
-      // split ONLY on first dot so kolomKey can contain dots like '1.1'
-      const firstDot = key.indexOf(".");
-      const lmKey = key.slice(0, firstDot);
-      const kolomKey = key.slice(firstDot + 1); // everything after first dot
+      if (key.includes(".")) {
+        const firstDot = key.indexOf(".");
+        const lmKey = key.slice(0, firstDot);
+        const kolomKey = key.slice(firstDot + 1);
 
-      if (!newValues[lmKey]) newValues[lmKey] = {};
-      newValues[lmKey][kolomKey] = cappedValue;
-    } else {
-      newValues[key] = cappedValue;
-    }
+        if (!newValues[lmKey]) newValues[lmKey] = {};
+        newValues[lmKey][kolomKey] = cappedValue;
+      } else {
+        newValues[key] = cappedValue;
+      }
 
-    return newValues;
-  });
+      return newValues;
+    });
 
-  setErrors(prev => ({ ...prev, [key]: null }));
-};
-
+    setErrors(prev => ({ ...prev, [key]: null }));
+  };
 
   const validate = () => {
     const e = {};
@@ -114,7 +102,6 @@ const onChange = (key, value) => {
         });
       });
 
-      // Validate ASLIM & ASAS
       const aslimKey = struktur.struktur.aslim?.kolom_key;
       const asasKey = struktur.struktur.asas?.kolom_key;
       
@@ -137,13 +124,10 @@ const onChange = (key, value) => {
     e.preventDefault();
     if (!validate()) return;
 
-    setSaving(true); // ✅ Disable inputs during save
+    setSaving(true);
 
     const nilaiData = {};
 
-    // ============================
-    // 1. LINGKUP MATERI (Nested LM)
-    // ============================
     if (struktur.struktur?.lingkup_materi) {
       struktur.struktur.lingkup_materi.forEach((lm) => {
         nilaiData[lm.lm_key] = {};
@@ -155,18 +139,12 @@ const onChange = (key, value) => {
       });
     }
 
-    // ============================
-    // 2. ASLIM (UTS) ROOT LEVEL
-    // ============================
     const aslimKey = struktur.struktur?.aslim?.kolom_key;
     if (aslimKey) {
       const val = values[aslimKey] || "";
       nilaiData[aslimKey] = val !== "" ? parseFloat(val) : null;
     }
 
-    // ============================
-    // 3. ASAS (UAS) ROOT LEVEL
-    // ============================
     const asasKey = struktur.struktur?.asas?.kolom_key;
     if (asasKey) {
       const val = values[asasKey] || "";
@@ -178,9 +156,8 @@ const onChange = (key, value) => {
         siswa_id: row.siswa_id,
         nilai_data: nilaiData,
       });
-      onClose(); // ✅ Close form on success
     } catch (err) {
-      console.error("Save error:", err);
+      alert("Gagal menyimpan: " + (err.response?.data?.message || err.message));
     } finally {
       setSaving(false);
     }
@@ -236,11 +213,11 @@ const onChange = (key, value) => {
                             {fmt.kolom_label}
                           </label>
                           <input
-                            type="text" // ✅ Changed to text for better control, no 'e' issue
+                            type="text"
                             inputMode="decimal"
                             value={val}
                             onChange={(e) => onChange(key, e.target.value)}
-                            disabled={saving} // ✅ Disable during save
+                            disabled={saving}
                             className={`w-full border rounded-lg px-3 py-2 text-base focus:ring-2 focus:ring-blue-500 focus:outline-none ${
                               errors[key] ? "border-red-500" : "border-gray-300"
                             }`}
@@ -272,7 +249,7 @@ const onChange = (key, value) => {
                         {struktur.struktur.aslim.kolom_label} (UTS)
                       </label>
                       <input
-                        type="text" // ✅ Changed to text
+                        type="text"
                         inputMode="decimal"
                         value={values[struktur.struktur.aslim.kolom_key] || ""}
                         onChange={(e) => onChange(struktur.struktur.aslim.kolom_key, e.target.value)}
@@ -296,7 +273,7 @@ const onChange = (key, value) => {
                         {struktur.struktur.asas.kolom_label} (UAS)
                       </label>
                       <input
-                        type="text" // ✅ Changed to text
+                        type="text"
                         inputMode="decimal"
                         value={values[struktur.struktur.asas.kolom_key] || ""}
                         onChange={(e) => onChange(struktur.struktur.asas.kolom_key, e.target.value)}

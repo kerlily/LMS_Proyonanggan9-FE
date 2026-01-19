@@ -6,12 +6,6 @@ import { getKelas, getSiswaByKelas } from "../../_services/siswa";
 import { Link } from "react-router-dom";
 import AuthContext from "../../context/AuthContext";
 
-/**
- * StudentLogin
- * - pilih kelas -> fetch siswa
- * - pilih nama -> nama auto terisi
- * - masukkan password -> login
- */
 export default function StudentLogin() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,53 +25,41 @@ export default function StudentLogin() {
 
   const { user, loginSiswa } = useContext(AuthContext);
 
-  const getSiswaName = (s) =>
-    s?.nama || s?.name || s?.full_name || s?.fullname || s?.username || "";
+  const getSiswaName = (s) => s?.nama || "";
 
   const handleLoadKelas = async () => {
-  setLoadingKelas(true);
-  try {
-    const res = await getKelas();
-    setKelasList(Array.isArray(res.data) ? res.data : []);
-  } catch (err) {
-    console.error("Gagal ambil kelas:", err);
-  } finally {
-    setLoadingKelas(false);
-  }
-};
+    setLoadingKelas(true);
+    try {
+      const res = await getKelas();
+      setKelasList(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      // Ignore error
+    } finally {
+      setLoadingKelas(false);
+    }
+  };
 
-  // load kelas otomatis saat komponen mount
   useEffect(() => {
     handleLoadKelas();
   }, []);
 
-useEffect(() => {
-  // only redirect when there is a logged-in siswa with a siswa token
-  if (!user) return;
+  useEffect(() => {
+    if (!user) return;
 
-  // deteksi token siswa di localStorage (fallback bila AuthProvider belum set token)
-  const siswaToken = localStorage.getItem("siswa_token");
-  const genericToken = localStorage.getItem("token") || localStorage.getItem("access_token");
+    const siswaToken = localStorage.getItem("siswa_token");
+    const genericToken = localStorage.getItem("token") || localStorage.getItem("access_token");
 
-  // Deteksi apakah user adalah murid.
-  // Preferensi: periksa property role, kalau tidak ada, cek key unik siswa seperti kelas_id, nis, dll.
-  const isSiswa = user?.role === "siswa" || Boolean(user?.kelas_id) || Boolean(user?.siswa_id);
+    const isSiswa = user?.role === "siswa" || Boolean(user?.kelas_id) || Boolean(user?.siswa_id);
 
-  // hanya redirect kalau benar murid dan ada siswa token (atau generic token)
-  if (isSiswa && (siswaToken || genericToken)) {
-    // use navigate but DO NOT include navigate in deps to avoid re-run from unstable ref
-    if (location.pathname !== "/siswa/dashboard") {
-      navigate("/siswa/dashboard", { replace: true });
+    if (isSiswa && (siswaToken || genericToken)) {
+      if (location.pathname !== "/siswa/dashboard") {
+        navigate("/siswa/dashboard", { replace: true });
+      }
     }
-  }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [user, location.pathname]);
-
-
- 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, location.pathname]);
 
   useEffect(() => {
-    // reset saat ganti kelas
     setSiswaList([]);
     setSelectedSiswaId("");
     setNamaValue("");
@@ -90,7 +72,6 @@ useEffect(() => {
     getSiswaByKelas(kelasId)
       .then((res) => setSiswaList(Array.isArray(res.data) ? res.data : []))
       .catch((err) => {
-        console.error("Gagal ambil siswa:", err);
         setSiswaList([]);
       })
       .finally(() => setLoadingSiswa(false));
@@ -119,7 +100,6 @@ useEffect(() => {
     try {
       await loginSiswa({ nama: namaValue, kelas_id: Number(kelasId), password });
     } catch (err) {
-      console.error("Login error:", err);
       const serverMsg = "Password salah";
       setError(serverMsg?.message || JSON.stringify(serverMsg));
     } finally {
@@ -129,8 +109,6 @@ useEffect(() => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-100 to-white flex flex-col items-center justify-center">
-      {/* Header Image for Mobile */}
-      {/* Form Card */}
       <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md relative overflow-hidden">
         <h1 className="text-2xl sm:text-3xl font-bold text-blue-600 mb-4 text-center">
           Login Murid
@@ -158,7 +136,6 @@ useEffect(() => {
                 </option>
               ))}
             </select>
-
           </div>
 
           <div>
@@ -207,7 +184,6 @@ useEffect(() => {
           {error && (
             <div className="text-red-500 text-sm bg-red-50 p-2 rounded-lg">
               {error}
-              
             </div>
           )}
 
