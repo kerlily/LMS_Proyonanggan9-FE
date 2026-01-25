@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
 import { Download, Upload, CheckCircle, XCircle, Eye, Save } from "lucide-react";
 import GuruLayout from "../../../components/layout/GuruLayout";

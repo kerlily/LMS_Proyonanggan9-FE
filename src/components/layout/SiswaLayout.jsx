@@ -4,12 +4,11 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, Award, Calendar, Key, LogOut, Menu, X, ChevronDown } from "lucide-react";
 import Swal from "sweetalert2";
 import ModalGantiPassword from "../siswa/ModalGantiPassword";
-// import { changePassword, logoutSiswa } from "../../_services/siswa"; // HAPUS direct logoutSiswa
 import { changePassword } from "../../_services/siswa";
 import AuthContext from "../../context/AuthContext";
 
 export default function SiswaLayout({ children }) {
-  const { user: ctxUser, logout } = useContext(AuthContext); // <-- gunakan context
+  const { user: ctxUser, logout } = useContext(AuthContext);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -53,12 +52,9 @@ export default function SiswaLayout({ children }) {
     setLoggingOut(true);
 
     try {
-      // panggil logout dari context yang langsung membersihkan client-side state
-      // AuthProvider.logout juga melakukan best-effort server logout setelah clear.
-      await logout(); // ini synchronous clear di AuthProvider lalu melakukan server calls tanpa mengubah client state lagi
+      await logout();
     } catch (e) {
       console.warn("safeLogout: logout() error (ignored):", e);
-      // fallback: bersihkan localStorage secara manual
       try {
         localStorage.removeItem("siswa_token");
         localStorage.removeItem("token");

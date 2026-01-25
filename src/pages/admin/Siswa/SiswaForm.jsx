@@ -39,6 +39,7 @@ export default function SiswaForm() {
         // Jika user pilih 'Belum punya kelas' (value "0"), kirim null agar backend tau belum ada kelas
         kelas_id: form.kelas_id === "0" ? null : Number(form.kelas_id),
       };
+      // eslint-disable-next-line no-unused-vars
       const res = await createSiswa(payload);
       setSuccess("Siswa berhasil dibuat.");
       setTimeout(() => navigate("/admin/siswa"), 800);

@@ -15,7 +15,6 @@ export default function GuruLayout({ children }) {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [mobileDropdown, setMobileDropdown] = useState(null);
 
-  // FIXED: Use controlled state update to prevent infinite loop
   const [userState, setUserState] = useState(() => {
     try {
       const raw = localStorage.getItem("userInfo") || localStorage.getItem("user");

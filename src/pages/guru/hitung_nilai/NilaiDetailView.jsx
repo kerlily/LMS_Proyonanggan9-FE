@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable no-unused-vars */
 // src/pages/guru/hitung_nilai/NilaiDetailView.jsx
 import React, { useEffect, useState } from "react";
 import { ArrowLeft, Search, FileSpreadsheet } from "lucide-react";

@@ -73,6 +73,7 @@ export default function StudentLogin() {
       .then((res) => setSiswaList(Array.isArray(res.data) ? res.data : []))
       .catch((err) => {
         setSiswaList([]);
+        
       })
       .finally(() => setLoadingSiswa(false));
   }, [kelasId]);

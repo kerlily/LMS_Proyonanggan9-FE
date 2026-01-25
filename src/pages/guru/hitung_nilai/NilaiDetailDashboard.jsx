@@ -1,13 +1,15 @@
+/* eslint-disable no-unused-vars */
 // src/pages/guru/hitung_nilai/NilaiDetailDashboard.jsx 
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom"; 
 import { 
   CheckCircle, XCircle, Calculator, RefreshCw, 
-  TrendingUp, Users, Clock, Plus, Eye
+  TrendingUp, Users, Clock, Plus, Eye, MessageSquare
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import GuruLayout from "../../../components/layout/GuruLayout";
 import NilaiDetailForm from "../../../components/NilaiDetailForm";
+import CatatanInput from "../../../components/CatatanInput";
 import ProgressCard from "../../../components/ProgressCard";
 import { showByGuru, getSemesterByTahunAjaran } from "../../../_services/waliKelas";
 import { 
@@ -50,15 +52,16 @@ export default function NilaiDetailDashboard() {
   const [rows, setRows] = useState([]);
   const [edited, setEdited] = useState({});
   const [progress, setProgress] = useState(null);
-  const [openRow, setOpenRow] = useState(null);
+  const [openRow, setOpenRow] = useState(null); // NilaiDetailForm modal
+  const [openCatatanRow, setOpenCatatanRow] = useState(null); // Catatan modal
   const [saving, setSaving] = useState(false);
+  const [savingCatatan, setSavingCatatan] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [generateSummary, setGenerateSummary] = useState(null);
   const [error, setError] = useState(null);
 
   const fetchProgress = useCallback(async () => {
     if (!kelasId || !selectedStruktur) return;
-    
     try {
       const res = await getProgress(kelasId, selectedStruktur.id);
       setProgress(res);
@@ -105,7 +108,8 @@ export default function NilaiDetailDashboard() {
           nilaiObj = {};
         }
 
-        return { ...r, nilai_data: nilaiObj };
+        // keep catatan if provided on row (catatan disimpan terpisah)
+        return { ...r, nilai_data: nilaiObj, catatan: r.catatan ?? r.catatan_mapel_siswa?.catatan ?? null, catatan_source: r.catatan_source ?? null };
       };
 
       const finalRows = rowsArray.map(normalizeRow);
@@ -233,10 +237,17 @@ export default function NilaiDetailDashboard() {
     }
   };
 
+  // Open Nilai Detail (Pencapaian Akademik) modal
   const openForm = (row) => {
     setOpenRow(row);
   };
 
+  // Open Catatan modal (small modal using CatatanInput)
+  const openCatatan = (row) => {
+    setOpenCatatanRow(row);
+  };
+
+  // Save nilai detail (existing)
   const handleSaveRow = async (saveData) => {
     try {
       setSaving(true);
@@ -274,6 +285,55 @@ export default function NilaiDetailDashboard() {
       alert("Gagal menyimpan: " + (error.response?.data?.message || error.message));
     }
   };
+
+  // Save catatan (from CatatanInput)
+const handleSaveCatatan = async (payloadFromComponent) => {
+  // payloadFromComponent may include siswa_id, struktur_nilai_mapel_id, catatan, mode...
+  if (!openCatatanRow || !selectedStruktur) {
+    alert("Tidak dapat menyimpan catatan: struktur atau baris tidak terpilih.");
+    return;
+  }
+
+  const siswaId = payloadFromComponent?.siswa_id ?? openCatatanRow.siswa_id;
+  const strukturId = selectedStruktur.id;
+  const catatanText = (payloadFromComponent?.catatan ?? openCatatanRow.catatan ?? "").trim() || null;
+  // use the existing nilai_data for this row (backend expects data.*.nilai_data)
+  const nilaiDataForRow = openCatatanRow.nilai_data ?? {}; // object (will be decoded as array/assoc in PHP)
+
+  try {
+    setSavingCatatan(true);
+
+    // Build payload matching backend validation: data: [{ siswa_id, nilai_data, catatan }]
+    const payload = {
+      data: [
+        {
+          siswa_id: siswaId,
+          nilai_data: nilaiDataForRow,
+          catatan: catatanText
+        }
+      ]
+    };
+
+    // Use service wrapper that calls /struktur-nilai/{struktur_id}/nilai-detail/bulk
+    await postNilaiDetailBulk(kelasId, strukturId, payload);
+
+    // Update local rows to reflect saved catatan (source = manual because user saved it manually)
+    setRows((prev) =>
+      prev.map((r) =>
+        r.siswa_id === siswaId ? { ...r, catatan: catatanText, catatan_source: "manual" } : r
+      )
+    );
+
+    alert("Catatan tersimpan.");
+    setOpenCatatanRow(null);
+  } catch (err) {
+    console.error("❌ saveCatatan error:", err);
+    alert("Gagal menyimpan catatan: " + (err.response?.data?.message || err.message));
+  } finally {
+    setSavingCatatan(false);
+  }
+};
+
 
   const handleGenerate = async () => {
     if (!selectedStruktur || !kelasId) {
@@ -322,7 +382,8 @@ export default function NilaiDetailDashboard() {
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl shadow-lg p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Input Nilai Detail</h1>
+              {/* Title changed to "Pencapaian Akademik" */}
+              <h1 className="text-3xl font-bold mb-2">Pencapaian Akademik</h1>
               <p className="text-blue-100">
                 Kelola nilai formatif, ASLIM (UTS), dan ASAS (UAS)
               </p>
@@ -585,12 +646,31 @@ export default function NilaiDetailDashboard() {
                               )}
                             </td>
                             <td className="px-4 py-3 text-center">
-                              <button
-                                onClick={() => openForm(r)}
-                                className="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                              >
-                                {hasData ? "Edit" : "Input"}
-                              </button>
+                              <div className="flex items-center justify-center gap-2">
+                                {/* Button 1: Pencapaian Akademik (Nilai Detail) */}
+                                <button
+                                  onClick={() => openForm(r)}
+                                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                                >
+                                  {hasData ? "Edit Capaian Akademik" : "Input Capaian Akademik"}
+                                </button>
+
+                                {/* Button 2: Catatan (hanya tampil jika ada nilai) */}
+                                {hasData && (
+                                  <button
+                                    onClick={() => openCatatan(r)}
+                                    className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors border border-purple-100"
+                                    title="Tambahkan / edit catatan siswa"
+                                  >
+                                    <MessageSquare className="w-4 h-4" />
+                                    Catatan
+                                  </button>
+                                )}
+                              </div>
+                              {/* optionally show small preview of catatan under actions */}
+                              {r.catatan && (
+                                <div className="mt-2 text-xs text-gray-600 italic">{r.catatan.length > 80 ? r.catatan.slice(0,80) + "..." : r.catatan}</div>
+                              )}
                             </td>
                           </tr>
                         );
@@ -643,7 +723,7 @@ export default function NilaiDetailDashboard() {
           </div>
         </div>
 
-        {/* Form Modal */}
+        {/* Form Modal: NilaiDetailForm */}
         {openRow && selectedStruktur && (
           <NilaiDetailForm
             open={!!openRow}
@@ -653,6 +733,62 @@ export default function NilaiDetailDashboard() {
             onSave={handleSaveRow}
           />
         )}
+
+        {/* Modal: CatatanInput (small modal) */}
+{openCatatanRow && selectedStruktur && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div
+      className="fixed inset-0 bg-black/50"
+      onClick={() => { if(!savingCatatan) setOpenCatatanRow(null); }}
+    />
+    <div className="relative bg-white rounded-lg shadow-xl w-full max-w-lg z-10 p-6">
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">Catatan: {openCatatanRow.siswa_nama}</h3>
+          <p className="text-xs text-gray-500 mt-1">Mapel: {selectedStruktur.mapel?.nama}</p>
+        </div>
+        <button onClick={() => { if(!savingCatatan) setOpenCatatanRow(null); }} className="text-gray-400 hover:text-gray-600">
+          ✕
+        </button>
+      </div>
+
+      <CatatanInput
+        mode="nilai_detail"
+        siswaId={openCatatanRow.siswa_id}
+        mapelId={selectedStruktur.mapel_id ?? selectedStruktur.mapel?.id}
+        strukturId={selectedStruktur.id}
+        initialValue={openCatatanRow.catatan ?? ""}
+        onSave={async (payload) => {
+          // CatatanInput akan mengirim { siswa_id, mapel_id, struktur_nilai_mapel_id, catatan, mode }
+          // Kita terima payload itu langsung dan simpan lewat postNilaiDetailBulk
+          await handleSaveCatatan(payload);
+        }}
+        disabled={savingCatatan}
+        placeholder="Tulis catatan akademik..."
+      />
+
+      <div className="mt-4 flex justify-end gap-2">
+        <button onClick={() => setOpenCatatanRow(null)} className="px-4 py-2 border rounded text-sm">Batal</button>
+
+        {/* optional: keep an explicit save button that triggers the same save path by
+            reading current catatan from the row (in case user didn't press internal save) */}
+        <button
+          onClick={async () => {
+            // trigger save with the latest catatan in the CatatanInput: the component calls onSave itself,
+            // but if you want this button to also work, you can fetch the current value from openCatatanRow.catatan.
+            // Safer: call handleSaveCatatan without payload -> it will use openCatatanRow.catatan
+            await handleSaveCatatan({});
+          }}
+          className="px-4 py-2 bg-purple-600 text-white rounded text-sm"
+          disabled={savingCatatan}
+        >
+          {savingCatatan ? "Menyimpan..." : "Simpan Catatan"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
       </div>
     </GuruLayout>
   );

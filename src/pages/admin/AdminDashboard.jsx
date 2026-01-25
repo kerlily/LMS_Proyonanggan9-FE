@@ -15,6 +15,7 @@ import { listMapel } from "../../_services/mapel";
 import { listAdmin } from "../../_services/adminUser";
 
 // StatCard, ActionCard and fmt helpers (sama seperti sebelumnya)
+// eslint-disable-next-line no-unused-vars
 function StatCard({ label, value, icon: Icon, color = "indigo", trend }) {
   const colorClasses = {
     indigo: "from-indigo-500 to-indigo-600",
@@ -53,6 +54,7 @@ function ActionCard({
   description,
   buttonText,
   onClick,
+  // eslint-disable-next-line no-unused-vars
   icon: Icon,
   color = "indigo",
 }) {

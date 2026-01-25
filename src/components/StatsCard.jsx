@@ -2,6 +2,7 @@
 import React from "react";
 
 // Generic StatCard component (consistent with NilaiDetailDashboard pattern)
+// eslint-disable-next-line no-unused-vars
 export function StatCard({ icon: Icon, title, value, subtitle, color = "blue" }) {
   return (
     <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
