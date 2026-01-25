@@ -243,7 +243,6 @@ export default function GuruLayout({ children }) {
                 <h1 className="text-lg font-bold text-white">
                   Portal Guru
                 </h1>
-                <p className="text-xs text-indigo-200 hidden sm:block">Learning Management System</p>
               </div>
             </div>
 

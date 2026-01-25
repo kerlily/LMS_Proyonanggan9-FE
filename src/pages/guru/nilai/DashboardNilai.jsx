@@ -2,11 +2,12 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { AlertCircle, FileText } from "lucide-react";
 import GuruLayout from "../../../components/layout/GuruLayout";
 import FilterKelasNilai from "../../../components/FilterKelasNilai";
 import TabelNilaiSiswa from "../../../components/TabelNilaiSiswa";
 import NilaiStatsCards from "../../../components/StatsCard";
+import CatatanAkademikInput from "../../../components/CatatanAkademikInput";
 import { getNilaiByKelas, storeNilai } from "../../../_services/nilai";
 import { showByGuru, getSemesterByTahunAjaran } from "../../../_services/waliKelas";
 import api from "../../../_api";
@@ -26,6 +27,9 @@ export default function DashboardNilai() {
   // Data state
   const [nilaiData, setNilaiData] = useState([]);
   const [error, setError] = useState(null);
+
+  // Modal state untuk catatan akademik
+  const [showCatatanModal, setShowCatatanModal] = useState(false);
 
   // Fetch initial data on mount
   useEffect(() => {
@@ -171,7 +175,21 @@ export default function DashboardNilai() {
     navigate("/guru/nilai-sikap");
   };
 
-  const handleRefresh = () => {
+  const handleOpenCatatanModal = () => {
+    if (!selectedAssignment || !selectedSemester) {
+      Swal.fire({
+        icon: "warning",
+        title: "Perhatian",
+        text: "Pilih kelas dan semester terlebih dahulu",
+      });
+      return;
+    }
+    setShowCatatanModal(true);
+  };
+
+  const handleCloseCatatanModal = () => {
+    setShowCatatanModal(false);
+    // Refresh nilai data setelah catatan disimpan
     if (selectedAssignment && selectedSemester) {
       fetchNilaiData();
     }
@@ -206,12 +224,12 @@ export default function DashboardNilai() {
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
               <button
-                onClick={handleRefresh}
-                disabled={loading || !selectedAssignment || !selectedSemester}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleOpenCatatanModal}
+                disabled={!selectedAssignment || !selectedSemester}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
+                <FileText className="w-5 h-5" />
+                Input Catatan Akademik
               </button>
               <button
                 onClick={handleGoToNilaiSikap}
@@ -290,8 +308,10 @@ export default function DashboardNilai() {
             <TabelNilaiSiswa
               data={nilaiData}
               onUpdateNilai={handleUpdateNilai}
+              onRefreshData={fetchNilaiData}
               loading={loading}
               semesterId={selectedSemester.id}
+              kelasId={selectedAssignment.kelas_id}
             />
           </div>
         )}
@@ -313,6 +333,17 @@ export default function DashboardNilai() {
           </div>
         )}
       </div>
+
+      {/* Modal Catatan Akademik */}
+      {showCatatanModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <CatatanAkademikInput
+            kelasId={selectedAssignment?.kelas_id}
+            semesterId={selectedSemester?.id}
+            onClose={handleCloseCatatanModal}
+          />
+        </div>
+      )}
     </GuruLayout>
   );
 }
