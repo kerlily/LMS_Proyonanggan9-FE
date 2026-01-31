@@ -282,57 +282,35 @@ export default function TahunAjaranIndex() {
     }
   };
 
-  // Toggle semester active
-  const handleToggleSemester = async (semesterId) => {
-    try {
-      MySwal.fire({
-        title: "Memproses...",
-        allowOutsideClick: false,
-        didOpen: () => MySwal.showLoading(),
-      });
-      const res = await toggleSemester(semesterId);
-      MySwal.close();
-      MySwal.fire({
-        icon: "success",
-        title: res?.data?.message ?? "Berhasil",
-      });
+// Toggle semester active
+const handleToggleSemester = async (semesterId) => {
+  try {
+    MySwal.fire({
+      title: "Memproses...",
+      allowOutsideClick: false,
+      didOpen: () => MySwal.showLoading(),
+    });
 
-      setData((prev) => {
-        const copy = JSON.parse(JSON.stringify(prev || []));
-        const updatedSem = res?.data?.data ?? null;
-        if (!updatedSem) return copy;
+    await toggleSemester(semesterId);
 
-        const tid = updatedSem.tahun_ajaran?.id;
-        const yi = copy.findIndex((y) => y.id === tid);
-        if (yi >= 0) {
-          const semIdx = copy[yi].semesters.findIndex((s) => s.id === updatedSem.id);
-          if (semIdx >= 0) {
-            copy[yi].semesters[semIdx] = updatedSem;
-          } else {
-            copy[yi].semesters = copy[yi].semesters || [];
-            copy[yi].semesters.push(updatedSem);
-          }
-        } else {
-          for (let y = 0; y < copy.length; y++) {
-            const si = copy[y].semesters.findIndex((s) => s.id === updatedSem.id);
-            if (si >= 0) {
-              copy[y].semesters[si] = updatedSem;
-              break;
-            }
-          }
-        }
-        return copy;
-      });
-    } catch (e) {
-      MySwal.close();
-      console.error(e);
-      MySwal.fire({
-        icon: "error",
-        title: "Gagal toggle semester",
-        text: e?.response?.data?.message || e.message,
-      });
-    }
-  };
+    MySwal.close();
+    MySwal.fire({
+      icon: "success",
+      title: "Berhasil",
+    });
+
+    // reload full list to reflect true server state
+    await fetchList();
+  } catch (e) {
+    MySwal.close();
+    console.error(e);
+    MySwal.fire({
+      icon: "error",
+      title: "Gagal toggle semester",
+      text: e?.response?.data?.message || e.message,
+    });
+  }
+};
 
   // Open edit form
   const openEdit = (it) => {

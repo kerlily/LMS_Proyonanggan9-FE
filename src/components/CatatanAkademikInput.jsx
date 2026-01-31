@@ -1,11 +1,12 @@
 // src/components/CatatanAkademikInput.jsx
 import React, { useState, useEffect } from 'react';
 import { Save, X, FileText, AlertCircle, Check, Loader2 } from 'lucide-react';
+import * as catatanService from '../_services/catatanAkademik';
 import api from '../_api';
 
 /**
  * Komponen untuk input catatan akademik per siswa per mapel
- * Mendukung input manual dengan source tracking
+ * Menampilkan SEMUA struktur nilai di kelas (tidak harus ada nilai detail)
  */
 const CatatanAkademikInput = ({ 
   kelasId, 
@@ -23,10 +24,10 @@ const CatatanAkademikInput = ({
   const [siswaList, setSiswaList] = useState([]);
   const [catatanData, setCatatanData] = useState({});
 
-  // Fetch struktur nilai untuk kelas
+  // Fetch struktur nilai yang tersedia untuk input catatan
   useEffect(() => {
     if (kelasId && semesterId) {
-      fetchStrukturNilai();
+      fetchAvailableStruktur();
     }
   }, [kelasId, semesterId]);
 
@@ -37,16 +38,19 @@ const CatatanAkademikInput = ({
     }
   }, [selectedStruktur]);
 
-  const fetchStrukturNilai = async () => {
+  /**
+   * Fetch SEMUA struktur nilai di kelas (tidak perlu ada nilai detail)
+   */
+  const fetchAvailableStruktur = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await api.get(`/kelas/${kelasId}/struktur-nilai`, {
-        params: { semester_id: semesterId }
+      const response = await catatanService.getAvailableStruktur(kelasId, {
+        semester_id: semesterId
       });
 
-      const data = response.data?.data || response.data || [];
+      const data = response.data?.data || [];
       setStrukturList(Array.isArray(data) ? data : []);
 
       // Auto-select first struktur if only one
@@ -55,12 +59,15 @@ const CatatanAkademikInput = ({
       }
     } catch (err) {
       console.error('Error fetching struktur:', err);
-      setError('Gagal memuat data struktur nilai');
+      setError(err?.response?.data?.message || 'Gagal memuat data struktur nilai');
     } finally {
       setLoading(false);
     }
   };
 
+  /**
+   * Fetch catatan yang sudah ada untuk struktur yang dipilih
+   */
   const fetchCatatanExisting = async () => {
     if (!selectedStruktur) return;
 
@@ -73,9 +80,10 @@ const CatatanAkademikInput = ({
       const siswaData = siswaResponse.data?.data || siswaResponse.data || [];
       setSiswaList(Array.isArray(siswaData) ? siswaData : []);
 
-      // Get existing catatan dari catatan_mapel_siswa
-      const catatanResponse = await api.get(
-        `/kelas/${kelasId}/struktur-nilai/${selectedStruktur.id}/catatan`
+      // Get existing catatan menggunakan service
+      const catatanResponse = await catatanService.getCatatanByStruktur(
+        kelasId,
+        selectedStruktur.id
       );
 
       const existingCatatan = catatanResponse.data?.data || {};
@@ -89,7 +97,7 @@ const CatatanAkademikInput = ({
       setCatatanData(catatanMap);
     } catch (err) {
       console.error('Error fetching catatan:', err);
-      // Jika endpoint belum ada, set empty catatan
+      // Jika error, set empty catatan (struktur baru belum ada catatan)
       setCatatanData({});
     } finally {
       setLoading(false);
@@ -114,23 +122,27 @@ const CatatanAkademikInput = ({
       setError(null);
       setSuccess(null);
 
-      // Prepare payload
-      const payload = {
-        catatan_data: Object.entries(catatanData)
-          .filter(([ catatan]) => catatan && catatan.trim() !== '')
-          .map(([siswa_id, catatan]) => ({
-            siswa_id: parseInt(siswa_id),
-            catatan: catatan.trim()
-          }))
-      };
+      // Prepare data hanya untuk siswa yang ada catatannya
+      const catatanArray = Object.entries(catatanData)
+        .filter(([, catatan]) => catatan && catatan.trim() !== '')
+        .map(([siswa_id, catatan]) => ({
+          siswa_id: parseInt(siswa_id),
+          catatan: catatan.trim()
+        }));
 
-      // Save to catatan_mapel_siswa
-      await api.post(
-        `/kelas/${kelasId}/struktur-nilai/${selectedStruktur.id}/catatan/bulk`,
-        payload
+      if (catatanArray.length === 0) {
+        setError('Tidak ada catatan yang diisi');
+        return;
+      }
+
+      // Save menggunakan service
+      const response = await catatanService.saveBulkCatatan(
+        kelasId,
+        selectedStruktur.id,
+        catatanArray
       );
 
-      setSuccess('Catatan berhasil disimpan');
+      setSuccess(response.data?.message || 'Catatan berhasil disimpan');
 
       // Auto close after 2 seconds
       setTimeout(() => {
@@ -195,7 +207,7 @@ const CatatanAkademikInput = ({
         )}
 
         {/* Loading State */}
-        {loading && (
+        {loading && !selectedStruktur && (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
@@ -204,7 +216,21 @@ const CatatanAkademikInput = ({
           </div>
         )}
 
-        {!loading && (
+        {!loading && strukturList.length === 0 && (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FileText className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Tidak Ada Struktur Nilai
+            </h3>
+            <p className="text-gray-600">
+              Belum ada struktur nilai mapel di kelas ini untuk semester yang dipilih
+            </p>
+          </div>
+        )}
+
+        {!loading && strukturList.length > 0 && (
           <>
             {/* Pilih Mata Pelajaran */}
             <div className="mb-6">
@@ -216,16 +242,23 @@ const CatatanAkademikInput = ({
                 onChange={(e) => {
                   const struktur = strukturList.find(s => s.id === parseInt(e.target.value));
                   setSelectedStruktur(struktur || null);
+                  // Reset catatan data
+                  setCatatanData({});
                 }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={loading}
               >
                 <option value="">-- Pilih Mata Pelajaran --</option>
                 {strukturList.map(struktur => (
                   <option key={struktur.id} value={struktur.id}>
                     {struktur.mapel?.nama || 'Unknown'} - {struktur.semester?.nama || ''}
+                    {struktur.catatan_count > 0 && ` (${struktur.catatan_count} catatan)`}
                   </option>
                 ))}
               </select>
+              <p className="mt-1 text-sm text-gray-500">
+                Semua mata pelajaran di kelas ini tersedia untuk input catatan
+              </p>
             </div>
 
             {/* Info Box */}
@@ -240,20 +273,37 @@ const CatatanAkademikInput = ({
                       {selectedStruktur.mapel?.nama}
                     </h3>
                     <p className="text-sm text-blue-700">
-                      Catatan ini akan tersimpan sebagai <strong>catatan manual</strong> dan dapat diedit kapan saja.
+                      Catatan ini akan tersimpan dan dapat diedit kapan saja.
                       Catatan akan muncul di rapor siswa.
                     </p>
+                    {selectedStruktur.catatan_count > 0 && (
+                      <p className="text-sm text-blue-600 mt-1 font-medium">
+                        ✓ Sudah ada {selectedStruktur.catatan_count} catatan tersimpan
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
             )}
 
+            {/* Loading siswa */}
+            {loading && selectedStruktur && (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+              </div>
+            )}
+
             {/* Daftar Siswa & Input Catatan */}
-            {selectedStruktur && siswaList.length > 0 && (
+            {!loading && selectedStruktur && siswaList.length > 0 && (
               <div className="space-y-4">
-                <h3 className="font-semibold text-gray-900 mb-4">
-                  Daftar Siswa ({siswaList.length})
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-gray-900">
+                    Daftar Siswa ({siswaList.length})
+                  </h3>
+                  <span className="text-sm text-gray-600">
+                    {Object.values(catatanData).filter(c => c && c.trim()).length} siswa memiliki catatan
+                  </span>
+                </div>
 
                 <div className="space-y-3">
                   {siswaList.map((siswa, index) => (
@@ -281,12 +331,13 @@ const CatatanAkademikInput = ({
                             onChange={(e) => handleCatatanChange(siswa.id, e.target.value)}
                             placeholder="Tulis catatan akademik untuk siswa ini..."
                             rows={3}
+                            maxLength={1000}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
                           />
                           
                           {catatanData[siswa.id] && (
                             <p className="text-xs text-gray-500 mt-1">
-                              {catatanData[siswa.id].length} karakter
+                              {catatanData[siswa.id].length}/1000 karakter
                             </p>
                           )}
                         </div>
@@ -298,7 +349,7 @@ const CatatanAkademikInput = ({
             )}
 
             {/* Empty State */}
-            {selectedStruktur && siswaList.length === 0 && (
+            {!loading && selectedStruktur && siswaList.length === 0 && (
               <div className="text-center py-12">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <FileText className="w-8 h-8 text-gray-400" />
