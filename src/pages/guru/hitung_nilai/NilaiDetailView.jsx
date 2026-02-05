@@ -16,7 +16,7 @@ export default function NilaiDetailView() {
   const navigate = useNavigate();
   
   const [loading, setLoading] = useState(false);
-  const [loadingTable, setLoadingTable] = useState(false); // Separate loading untuk table
+  const [loadingTable, setLoadingTable] = useState(false); 
   const [tahunAjaran, setTahunAjaran] = useState(null);
   const [assignments, setAssignments] = useState([]);
   const [selectedAssignment, setSelectedAssignment] = useState(null);

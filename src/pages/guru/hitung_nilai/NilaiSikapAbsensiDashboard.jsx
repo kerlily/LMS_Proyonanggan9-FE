@@ -46,13 +46,21 @@ export default function NilaiSikapAbsensiDashboard() {
     loadWaliKelas();
   }, []);
 
-  // when kelasId changes: set tahunAjaranId, fetch semesters & siswa
+  // when kelasId changes: set tahunAjaranId and fetch semesters
   useEffect(() => {
     if (!kelasId) {
+      // reset related states when no class selected
       setSiswa([]);
       setSemesters([]);
       setSemesterId("");
       setTahunAjaranId(null);
+      setSikap({});
+      setOriginalSikap({});
+      setDeskripsi({});
+      setOriginalDeskripsi({});
+      setAbsensi({});
+      setCatatan({});
+      setOriginalCatatan({});
       return;
     }
 
@@ -76,20 +84,31 @@ export default function NilaiSikapAbsensiDashboard() {
       }
     };
 
-    const loadSiswa = async () => {
+    // Only load semesters here. Do NOT load siswa yet — wait until semester is chosen.
+    loadSemesters();
+    // ensure semester reset when switching class
+    setSemesterId("");
+  }, [kelasId, waliKelas]);
+
+  // when semester changes: fetch siswa + existing nilai & absensi
+  useEffect(() => {
+    const loadSiswaAndExisting = async () => {
+      if (!kelasId || !semesterId) return;
+
       try {
         setLoading(true);
+        // 1) load siswa
         const res = await getSiswaByKelas(kelasId);
         const payload = res.data ?? res;
         const list = Array.isArray(payload) ? payload : (payload?.data ?? payload ?? []);
         setSiswa(list || []);
 
-        // initialize states
+        // initialize states based on siswa list
         const sInit = {};
         const aInit = {};
         const descInit = {};
         const catInit = {};
-        list.forEach((st) => {
+        (list || []).forEach((st) => {
           sInit[st.id] = "";
           descInit[st.id] = "";
           catInit[st.id] = "";
@@ -102,102 +121,93 @@ export default function NilaiSikapAbsensiDashboard() {
         setAbsensi(aInit);
         setCatatan(catInit);
         setOriginalCatatan({});
+
+        // 2) fetch existing nilai sikap
+        try {
+          const sikapRes = await nilaiSikapService.getNilaiSikap(kelasId, { semester_id: Number(semesterId) });
+          const sikapPayload = sikapRes.data ?? sikapRes;
+          const sikapList = Array.isArray(sikapPayload) ? sikapPayload : (sikapPayload?.data ?? sikapPayload ?? []);
+          const sikapTemp = {};
+          const desTemp = {};
+          (sikapList || []).forEach((n) => {
+            if (n && (n.siswa_id || n.siswa_id === 0)) {
+              sikapTemp[n.siswa_id] = n.nilai ?? "";
+              desTemp[n.siswa_id] = n.deskripsi ?? "";
+            }
+          });
+
+          setOriginalSikap(sikapTemp);
+          setOriginalDeskripsi(desTemp);
+          setSikap((prev) => {
+            const merged = { ...prev };
+            Object.keys(sikapTemp).forEach((k) => {
+              if (!merged[k] || String(merged[k]).trim() === "") {
+                merged[k] = sikapTemp[k];
+              }
+            });
+            return merged;
+          });
+          setDeskripsi((prev) => {
+            const merged = { ...prev };
+            Object.keys(desTemp).forEach((k) => {
+              if (!merged[k] || String(merged[k]).trim() === "") {
+                merged[k] = desTemp[k];
+              }
+            });
+            return merged;
+          });
+        } catch (err) {
+          console.error("Error fetching existing sikap:", err);
+        }
+
+        // 3) fetch existing ketidakhadiran
+        try {
+          const hadirRes = await ketidakhadiranService.getKetidakhadiran(kelasId, { semester_id: Number(semesterId) });
+          const hadirPayload = hadirRes.data ?? hadirRes;
+          const hadirList = Array.isArray(hadirPayload) ? hadirPayload : (hadirPayload?.data ?? hadirPayload ?? []);
+          const absTemp = {};
+          const catTemp = {};
+          (hadirList || []).forEach((h) => {
+            if (h && (h.siswa_id || h.siswa_id === 0)) {
+              absTemp[h.siswa_id] = {
+                ijin: Number(h.ijin ?? 0),
+                sakit: Number(h.sakit ?? 0),
+                alpa: Number(h.alpa ?? 0),
+              };
+              catTemp[h.siswa_id] = h.catatan ?? "";
+            }
+          });
+
+          setAbsensi((prev) => {
+            const merged = { ...prev };
+            Object.keys(absTemp).forEach((k) => {
+              merged[k] = absTemp[k];
+            });
+            return merged;
+          });
+
+          setOriginalCatatan(catTemp);
+          setCatatan((prev) => {
+            const merged = { ...prev };
+            Object.keys(catTemp).forEach((k) => {
+              if (!merged[k] || String(merged[k]).trim() === "") {
+                merged[k] = catTemp[k];
+              }
+            });
+            return merged;
+          });
+        } catch (err) {
+          console.error("Error fetching existing ketidakhadiran:", err);
+        }
       } catch (err) {
-        console.error("Error fetching siswa:", err);
+        console.error("Error loading siswa or existing data:", err);
         setSiswa([]);
       } finally {
         setLoading(false);
       }
     };
 
-    loadSemesters();
-    loadSiswa();
-    setSemesterId("");
-  }, [kelasId, waliKelas]);
-
-  // when semester changes: fetch existing nilai & absensi
-  useEffect(() => {
-    const fetchExisting = async () => {
-      if (!kelasId || !semesterId) return;
-      try {
-        setLoading(true);
-
-        // nilai sikap existing
-        const sikapRes = await nilaiSikapService.getNilaiSikap(kelasId, { semester_id: Number(semesterId) });
-        const sikapPayload = sikapRes.data ?? sikapRes;
-        const sikapList = Array.isArray(sikapPayload) ? sikapPayload : (sikapPayload?.data ?? sikapPayload ?? []);
-        const sikapTemp = {};
-        const desTemp = {};
-        (sikapList || []).forEach((n) => {
-          if (n && (n.siswa_id || n.siswa_id === 0)) {
-            sikapTemp[n.siswa_id] = n.nilai ?? "";
-            desTemp[n.siswa_id] = n.deskripsi ?? "";
-          }
-        });
-        
-        setOriginalSikap(sikapTemp);
-        setOriginalDeskripsi(desTemp);
-        setSikap((prev) => {
-          const merged = { ...prev };
-          Object.keys(sikapTemp).forEach((k) => {
-            if (!merged[k] || String(merged[k]).trim() === "") {
-              merged[k] = sikapTemp[k];
-            }
-          });
-          return merged;
-        });
-        setDeskripsi((prev) => {
-          const merged = { ...prev };
-          Object.keys(desTemp).forEach((k) => {
-            if (!merged[k] || String(merged[k]).trim() === "") {
-              merged[k] = desTemp[k];
-            }
-          });
-          return merged;
-        });
-
-        // ketidakhadiran existing
-        const hadirRes = await ketidakhadiranService.getKetidakhadiran(kelasId, { semester_id: Number(semesterId) });
-        const hadirPayload = hadirRes.data ?? hadirRes;
-        const hadirList = Array.isArray(hadirPayload) ? hadirPayload : (hadirPayload?.data ?? hadirPayload ?? []);
-        const absTemp = {};
-        const catTemp = {};
-        (hadirList || []).forEach((h) => {
-          if (h && (h.siswa_id || h.siswa_id === 0)) {
-            absTemp[h.siswa_id] = {
-              ijin: Number(h.ijin ?? 0),
-              sakit: Number(h.sakit ?? 0),
-              alpa: Number(h.alpa ?? 0),
-            };
-            catTemp[h.siswa_id] = h.catatan ?? "";
-          }
-        });
-        setAbsensi((prev) => {
-          const merged = { ...prev };
-          Object.keys(absTemp).forEach((k) => {
-            merged[k] = absTemp[k];
-          });
-          return merged;
-        });
-
-        setOriginalCatatan(catTemp);
-        setCatatan((prev) => {
-          const merged = { ...prev };
-          Object.keys(catTemp).forEach((k) => {
-            if (!merged[k] || String(merged[k]).trim() === "") {
-              merged[k] = catTemp[k];
-            }
-          });
-          return merged;
-        });
-      } catch (err) {
-        console.error("fetchExisting error:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchExisting();
+    loadSiswaAndExisting();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kelasId, semesterId]);
 
@@ -225,7 +235,7 @@ export default function NilaiSikapAbsensiDashboard() {
     setCatatan((p) => ({ ...p, [siswaId]: value }));
   };
 
-  // save handler
+  // save handler (tidak berubah)
   const handleSimpan = async () => {
     if (!kelasId) {
       alert("Pilih kelas terlebih dahulu.");
@@ -407,7 +417,7 @@ export default function NilaiSikapAbsensiDashboard() {
                 onChange={(e) => setSemesterId(e.target.value)}
                 disabled={!tahunAjaranId || semesters.length === 0}
               >
-                <option value="">-- Pilih Semester --</option>
+                <option value=""> Pilih Semester </option>
                 {semesters.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.nama}
@@ -497,7 +507,7 @@ export default function NilaiSikapAbsensiDashboard() {
                       </div>
                     </td>
                   </tr>
-                ) : siswa.length === 0 ? (
+                ) : !kelasId ? (
                   <tr>
                     <td colSpan="8" className="p-8 text-center">
                       <div className="flex flex-col items-center gap-3 text-slate-500">
@@ -505,6 +515,30 @@ export default function NilaiSikapAbsensiDashboard() {
                         <div>
                           <div className="font-semibold">Belum ada data siswa</div>
                           <div className="text-sm">Pilih kelas untuk menampilkan daftar siswa</div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                ) : kelasId && !semesterId ? (
+                  <tr>
+                    <td colSpan="8" className="p-8 text-center">
+                      <div className="flex flex-col items-center gap-3 text-slate-500">
+                        <Users className="w-12 h-12 text-slate-300" />
+                        <div>
+                          <div className="font-semibold">Belum ada data siswa</div>
+                          <div className="text-sm">Pilih semester untuk menampilkan daftar siswa</div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                ) : siswa.length === 0 ? (
+                  <tr>
+                    <td colSpan="8" className="p-8 text-center">
+                      <div className="flex flex-col items-center gap-3 text-slate-500">
+                        <Users className="w-12 h-12 text-slate-300" />
+                        <div>
+                          <div className="font-semibold">Belum ada data siswa</div>
+                          <div className="text-sm">Tidak ada siswa di kelas ini</div>
                         </div>
                       </div>
                     </td>

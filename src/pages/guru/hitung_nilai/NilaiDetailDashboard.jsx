@@ -385,7 +385,7 @@ const handleSaveCatatan = async (payloadFromComponent) => {
               {/* Title changed to "Pencapaian Akademik" */}
               <h1 className="text-3xl font-bold mb-2">Pencapaian Akademik</h1>
               <p className="text-blue-100">
-                Kelola nilai formatif, ASLIM (UTS), dan ASAS (UAS)
+                Kelola nilai formatif, ASLIM, dan ASAS
               </p>
             </div>
             {tahunAjaran && (

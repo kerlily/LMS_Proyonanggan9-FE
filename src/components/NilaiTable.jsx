@@ -104,57 +104,6 @@ export default function NilaiTable({ data, struktur, kelas, mapel, semester }) {
     return Math.round(nilaiAkhir * 100) / 100;
   };
 
-  // Function export to Excel
-  const handleExportExcel = () => {
-    try {
-      const exportData = data.map((row, idx) => {
-        const rowData = {
-          No: idx + 1,
-          "Nama Siswa": row.siswa_nama || "",
-        };
-
-        // Add formatif columns
-        lingkupMateri.forEach((lm) => {
-          if (lm?.formatif) {
-            lm.formatif.forEach((f) => {
-              const nilai = getNilai(row.nilai_data, lm.lm_key, f.kolom_key);
-              rowData[f.kolom_label || "N/A"] = nilai ?? "";
-            });
-          }
-        });
-
-        // Add ASLIM & ASAS
-        const aslim = getNilai(row.nilai_data, null, aslimKey);
-        const asas = getNilai(row.nilai_data, null, asasKey);
-        
-        rowData["ASLIM"] = aslim ?? "";
-        rowData["ASAS"] = asas ?? "";
-        rowData["NILAI AKHIR"] = calculateNilaiAkhir(row.nilai_data) ?? "";
-
-        return rowData;
-      });
-
-      const ws = XLSX.utils.json_to_sheet(exportData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Nilai");
-
-      // Set column widths
-      const colWidths = [
-        { wch: 5 },  // No
-        { wch: 30 }, // Nama
-        ...Array(totalFormatifCols + 3).fill({ wch: 10 })
-      ];
-      ws["!cols"] = colWidths;
-
-      const fileName = `Nilai_${kelas?.nama || "Kelas"}_${mapel?.nama || "Mapel"}_${semester?.nama || "Semester"}.xlsx`;
-      XLSX.writeFile(wb, fileName);
-      
-      console.log("✅ Excel exported:", fileName);
-    } catch (error) {
-      console.error("❌ Export Excel error:", error);
-      alert("Gagal export Excel: " + error.message);
-    }
-  };
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100">
@@ -169,13 +118,6 @@ export default function NilaiTable({ data, struktur, kelas, mapel, semester }) {
               {mapel?.nama} • {semester?.nama}
             </p>
           </div>
-          <button
-            onClick={handleExportExcel}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-          >
-            <Download className="w-4 h-4" />
-            Export Excel
-          </button>
         </div>
       </div>
 

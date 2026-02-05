@@ -246,7 +246,7 @@ export default function NilaiDetailForm({ open, onClose, row, struktur, onSave }
                     {/* ASLIM */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        {struktur.struktur.aslim.kolom_label} (UTS)
+                        {struktur.struktur.aslim.kolom_label}
                       </label>
                       <input
                         type="text"
@@ -270,7 +270,7 @@ export default function NilaiDetailForm({ open, onClose, row, struktur, onSave }
                     {/* ASAS */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        {struktur.struktur.asas.kolom_label} (UAS)
+                        {struktur.struktur.asas.kolom_label}
                       </label>
                       <input
                         type="text"
