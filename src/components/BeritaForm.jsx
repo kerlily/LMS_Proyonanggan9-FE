@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Upload, Calendar, Eye, EyeOff, X } from 'lucide-react';
+import { Upload, Calendar, Eye, EyeOff, X, Newspaper, Megaphone } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { createBerita, updateBerita } from '../_services/berita';
 
 export default function BeritaForm({ initialData = null, onSaved = () => {}, onCancel = () => {} }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [type, setType] = useState('berita'); 
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [isPublished, setIsPublished] = useState(true);
@@ -16,6 +17,7 @@ export default function BeritaForm({ initialData = null, onSaved = () => {}, onC
     if (initialData) {
       setTitle(initialData.title || '');
       setDescription(initialData.description || '');
+      setType(initialData.type || 'berita');
       setIsPublished(!!initialData.is_published);
       setPublishedAt(initialData.published_at ? formatForInput(initialData.published_at) : '');
       setImagePreview(initialData.image_url || null);
@@ -28,6 +30,7 @@ export default function BeritaForm({ initialData = null, onSaved = () => {}, onC
   function resetForm() {
     setTitle('');
     setDescription('');
+    setType('berita');
     setImageFile(null);
     setImagePreview(null);
     setIsPublished(true);
@@ -105,6 +108,7 @@ export default function BeritaForm({ initialData = null, onSaved = () => {}, onC
       const formData = new FormData();
       formData.append('title', title.trim());
       formData.append('description', description.trim() || '');
+      formData.append('type', type);
       if (imageFile) formData.append('image', imageFile);
       formData.append('is_published', isPublished ? 1 : 0);
       if (publishedAt) {
@@ -134,6 +138,42 @@ if (initialData && initialData.id) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+       <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Tipe Konten <span className="text-red-500">*</span>
+        </label>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setType('berita')}
+            className={`flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-lg transition-all duration-200 ${
+              type === 'berita'
+                ? 'border-blue-600 bg-blue-50 text-blue-700'
+                : 'border-gray-300 hover:border-gray-400'
+            }`}
+          >
+            <Newspaper className="w-5 h-5" />
+            <span className="font-medium">Berita</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setType('pengumuman')}
+            className={`flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-lg transition-all duration-200 ${
+              type === 'pengumuman'
+                ? 'border-red-600 bg-red-50 text-red-700'
+                : 'border-gray-300 hover:border-gray-400'
+            }`}
+          >
+            <Megaphone className="w-5 h-5" />
+            <span className="font-medium">Pengumuman</span>
+          </button>
+        </div>
+        <p className="text-xs text-gray-500 mt-2">
+          {type === 'pengumuman' 
+            ? '📢 Pengumuman akan ditampilkan dengan badge merah khusus'
+            : '📰 Berita akan ditampilkan di halaman berita utama'}
+        </p>
+      </div>
       {/* Judul */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">

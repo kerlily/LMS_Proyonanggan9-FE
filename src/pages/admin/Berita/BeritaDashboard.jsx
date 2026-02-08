@@ -1,6 +1,6 @@
-// src/pages/guru/berita/BeritaDashboard.jsx
+// src/pages/admin/Berita/BeritaDashboard.jsx
 import React, { useEffect, useState } from 'react';
-import { Plus, RefreshCw, Edit2, Trash2, X, Eye, EyeOff, Calendar } from 'lucide-react';
+import { Plus, RefreshCw, Edit2, Trash2, X, Eye, EyeOff, Calendar, Newspaper, Megaphone } from 'lucide-react';
 import Swal from 'sweetalert2';
 import BeritaService from '../../../_services/berita';
 import BeritaForm from '../../../components/BeritaForm';
@@ -12,6 +12,7 @@ export default function BeritaDashboardAdmin() {
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [filterType, setFilterType] = useState('all'); // ✅ TAMBAH state filter
 
   useEffect(() => { 
     fetchBeritas(); 
@@ -30,6 +31,19 @@ export default function BeritaDashboardAdmin() {
       setLoading(false);
     }
   };
+
+  // ✅ TAMBAH fungsi filter
+  const getFilteredBeritas = () => {
+    if (filterType === 'berita') {
+      return beritas.filter(b => b.type === 'berita' || !b.type);
+    }
+    if (filterType === 'pengumuman') {
+      return beritas.filter(b => b.type === 'pengumuman');
+    }
+    return beritas; // 'all'
+  };
+
+  const filteredBeritas = getFilteredBeritas();
 
   const openCreate = () => { 
     setEditing(null); 
@@ -111,10 +125,10 @@ export default function BeritaDashboardAdmin() {
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
             <div className="mb-4 sm:mb-0">
-              <h1 className="text-2xl font-bold text-gray-900">Kelola Berita</h1>
-              <p className="text-gray-600 mt-1">Kelola semua berita (published dan draft)</p>
+              <h1 className="text-2xl font-bold text-gray-900">Kelola Berita & Pengumuman</h1>
+              <p className="text-gray-600 mt-1">Kelola semua konten (berita & pengumuman)</p>
             </div>
             <div className="flex items-center gap-3">
               <button
@@ -130,9 +144,46 @@ export default function BeritaDashboardAdmin() {
                 className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
               >
                 <Plus className="w-4 h-4" />
-                Buat Berita
+                Buat Konten
               </button>
             </div>
+          </div>
+
+          {/* ✅ TAMBAH Filter Tabs */}
+          <div className="flex gap-2 mb-6 overflow-x-auto">
+            <button
+              onClick={() => setFilterType('all')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                filterType === 'all'
+                  ? 'bg-gray-900 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <Eye className="w-4 h-4" />
+              Semua ({beritas.length})
+            </button>
+            <button
+              onClick={() => setFilterType('berita')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                filterType === 'berita'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <Newspaper className="w-4 h-4" />
+              Berita ({beritas.filter(b => b.type === 'berita' || !b.type).length})
+            </button>
+            <button
+              onClick={() => setFilterType('pengumuman')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                filterType === 'pengumuman'
+                  ? 'bg-red-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <Megaphone className="w-4 h-4" />
+              Pengumuman ({beritas.filter(b => b.type === 'pengumuman').length})
+            </button>
           </div>
 
           {/* Loading State */}
@@ -153,15 +204,41 @@ export default function BeritaDashboardAdmin() {
 
           {/* Statistics */}
           {!loading && beritas.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Total Berita</p>
+                    <p className="text-sm font-medium text-gray-600">Total</p>
                     <p className="text-2xl font-bold text-gray-900">{beritas.length}</p>
                   </div>
+                  <div className="p-2 bg-gray-100 rounded-lg">
+                    <Eye className="w-6 h-6 text-gray-600" />
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Berita</p>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {beritas.filter(b => b.type === 'berita' || !b.type).length}
+                    </p>
+                  </div>
                   <div className="p-2 bg-blue-100 rounded-lg">
-                    <Eye className="w-6 h-6 text-blue-600" />
+                    <Newspaper className="w-6 h-6 text-blue-600" />
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Pengumuman</p>
+                    <p className="text-2xl font-bold text-red-600">
+                      {beritas.filter(b => b.type === 'pengumuman').length}
+                    </p>
+                  </div>
+                  <div className="p-2 bg-red-100 rounded-lg">
+                    <Megaphone className="w-6 h-6 text-red-600" />
                   </div>
                 </div>
               </div>
@@ -178,34 +255,38 @@ export default function BeritaDashboardAdmin() {
                   </div>
                 </div>
               </div>
-              <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Draft</p>
-                    <p className="text-2xl font-bold text-yellow-600">
-                      {beritas.filter(b => !b.is_published).length}
-                    </p>
-                  </div>
-                  <div className="p-2 bg-yellow-100 rounded-lg">
-                    <EyeOff className="w-6 h-6 text-yellow-600" />
-                  </div>
-                </div>
-              </div>
             </div>
           )}
 
           {/* Berita Grid */}
           {!loading && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {beritas.map(berita => (
+              {filteredBeritas.map(berita => (
                 <div key={berita.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
                   {berita.image_url && (
-                    <div className="aspect-w-16 aspect-h-9 bg-gray-200">
+                    <div className="relative aspect-w-16 aspect-h-9 bg-gray-200">
                       <img 
                         src={berita.image_url} 
                         alt={berita.title}
                         className="w-full h-48 object-cover"
                       />
+                      {/* ✅ Badge di atas gambar */}
+                      {berita.type === 'pengumuman' && (
+                        <div className="absolute top-2 left-2">
+                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-full shadow-lg">
+                            <Megaphone className="w-3 h-3" />
+                            PENGUMUMAN
+                          </span>
+                        </div>
+                      )}
+                      {(!berita.type || berita.type === 'berita') && (
+                        <div className="absolute top-2 left-2">
+                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-full shadow-lg">
+                            <Newspaper className="w-3 h-3" />
+                            BERITA
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
                   <div className="p-4">
@@ -213,7 +294,8 @@ export default function BeritaDashboardAdmin() {
                       <h3 className="font-semibold text-gray-900 line-clamp-2 flex-1">
                         {berita.title}
                       </h3>
-                      <span className={`ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      {/* Badge Status */}
+                      <span className={`ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium shrink-0 ${
                         berita.is_published 
                           ? 'bg-green-100 text-green-800' 
                           : 'bg-yellow-100 text-yellow-800'
@@ -241,30 +323,23 @@ export default function BeritaDashboardAdmin() {
                         <Calendar className="w-3 h-3" />
                         {berita.published_at ? formatDate(berita.published_at) : 'Belum dipublish'}
                       </div>
-                      <div>
-                        Dibuat: {formatDate(berita.created_at)}
-                      </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-                      <div className="text-xs text-gray-500">
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => openEdit(berita)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
-                          title="Edit Berita"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(berita.id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
-                          title="Hapus Berita"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                    <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-200">
+                      <button
+                        onClick={() => openEdit(berita)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                        title="Edit"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(berita.id)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                        title="Hapus"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -273,24 +348,24 @@ export default function BeritaDashboardAdmin() {
           )}
 
           {/* Empty State */}
-          {!loading && beritas.length === 0 && !error && (
+          {!loading && filteredBeritas.length === 0 && !error && (
             <div className="text-center py-12">
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 max-w-md mx-auto">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Plus className="w-8 h-8 text-gray-400" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Belum ada berita
+                  Belum ada {filterType === 'all' ? 'konten' : filterType}
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  Mulai buat berita pertama Anda untuk dibagikan
+                  Mulai buat konten pertama Anda
                 </p>
                 <button
                   onClick={openCreate}
                   className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
                 >
                   <Plus className="w-4 h-4" />
-                  Buat Berita Pertama
+                  Buat Konten
                 </button>
               </div>
             </div>
@@ -302,7 +377,7 @@ export default function BeritaDashboardAdmin() {
               <div className="bg-white w-full max-w-4xl rounded-2xl shadow-xl max-h-[90vh] overflow-hidden">
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
                   <h4 className="text-lg font-semibold text-gray-900">
-                    {editing ? 'Edit Berita' : 'Buat Berita Baru'}
+                    {editing ? 'Edit Konten' : 'Buat Konten Baru'}
                   </h4>
                   <button 
                     onClick={() => setShowForm(false)}

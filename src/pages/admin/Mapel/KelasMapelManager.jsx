@@ -211,7 +211,7 @@ export default function KelasMapelManager() {
             <option value="">-- Pilih Kelas --</option>
             {kelasList.map((k) => (
               <option key={k.id} value={k.id}>
-                {k.nama} {k.tingkat ? `- K${k.tingkat}` : ""} {k.section ? `(${k.section})` : ""}
+                {k.nama}
               </option>
             ))}
           </select>

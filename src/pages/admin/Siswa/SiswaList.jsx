@@ -87,6 +87,7 @@ export default function SiswaList() {
   const [kelasList, setKelasList] = useState([]);
   const [q] = useState("");
   const [kelasId, setKelasId] = useState("");
+  const [isAlumni, setIsAlumni] = useState(""); // ✅ TAMBAHAN: "" = semua, "1" = alumni, "0" = aktif
   const [sort] = useState("nama:asc");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -95,7 +96,7 @@ export default function SiswaList() {
   const debounceRef = useRef(null);
 
   // fetch list with given params
-  const fetchList = async ({ page: pageArg = 1, q: qArg = q, kelasId: kelasArg = kelasId, sort: sortArg = sort } = {}) => {
+  const fetchList = async ({ page: pageArg = 1, q: qArg = q, kelasId: kelasArg = kelasId, isAlumni: isAlumniArg = isAlumni, sort: sortArg = sort } = {}) => {
     setLoading(true);
     setError(null);
     try {
@@ -103,6 +104,7 @@ export default function SiswaList() {
         page: pageArg,
         q: qArg || undefined,
         kelas_id: kelasArg || undefined,
+        is_alumni: isAlumniArg !== "" ? isAlumniArg : undefined, // ✅ TAMBAHAN: kirim is_alumni ke backend
         sort: sortArg || undefined,
       };
       
@@ -171,14 +173,14 @@ export default function SiswaList() {
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      fetchList({ page: 1, q, kelasId, sort });
+      fetchList({ page: 1, q, kelasId, isAlumni, sort }); // ✅ TAMBAHAN: include isAlumni
     }, 350);
     return () => clearTimeout(debounceRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, kelasId, sort]);
+  }, [q, kelasId, isAlumni, sort]); // ✅ TAMBAHAN: isAlumni di dependency
 
   const handlePage = (p) => {
-    fetchList({ page: p, q, kelasId, sort });
+    fetchList({ page: p, q, kelasId, isAlumni, sort }); // ✅ TAMBAHAN: include isAlumni
   };
 
   // Use SweetAlert2 for delete confirmation
@@ -218,49 +220,23 @@ export default function SiswaList() {
     }
   };
 
-  // helpers for display
-  const getKelasNama = (item) => {
-    // Prefer explicit kelas relation
-    if (item.kelas && item.kelas.nama) return item.kelas.nama;
-    // If provided in different key (kelas_saat_ini)
-    if (item.kelas_saat_ini && item.kelas_saat_ini.nama) return item.kelas_saat_ini.nama;
-    // Fallback: riwayat_kelas first entry (some endpoints include riwayat_kelas)
-    const rk = item.riwayat_kelas ?? item.riwayatKelas ?? null;
-    if (Array.isArray(rk) && rk.length) {
-      const first = rk[0];
-      if (first?.kelas?.nama) return first.kelas.nama;
-    }
-    // last-resort: kelas_id value
-    if (item.kelas_id) return `Kelas ${item.kelas_id}`;
-    return "-";
-  };
-
-  // new: compute last riwayat label robustly
-  const getLastRiwayatLabel = (item) => {
-    // check both naming variants
-    const rkArr = item.riwayat_kelas ?? item.riwayatKelas ?? null;
-    if (Array.isArray(rkArr) && rkArr.length > 0) {
-      // backend usually sorts desc so first is latest; otherwise pick first
-      const last = rkArr[0];
-      const kelasNama = last?.kelas?.nama ?? last?.kelas?.nama ?? null;
-      const taNama = last?.tahun_ajaran?.nama ?? last?.tahun_ajaran_id ?? null;
-      const t = taNama ? `${taNama}` : null;
-      if (kelasNama && t) return `${kelasNama} (${t})`;
-      if (kelasNama) return `${kelasNama}`;
-      if (t) return `TA: ${t}`;
-    }
-
-    if (item.kelas && item.kelas.nama) {
-      return `${item.kelas.nama}`;
-    }
-
-    // fallback: kelas_saat_ini
-    if (item.kelas_saat_ini && item.kelas_saat_ini.nama) {
-      return `${item.kelas_saat_ini.nama}`;
-    }
-
-    return "-";
-  };
+const getKelasNama = (item) => {
+  // Priority 1: Kelas relation (current active class)
+  if (item.kelas && item.kelas.nama) {
+    return item.kelas.nama;
+  }
+  
+  // Priority 2: kelas_saat_ini (if available from backend)
+  if (item.kelas_saat_ini && item.kelas_saat_ini.nama) {
+    return item.kelas_saat_ini.nama;
+  }
+  
+  // Priority 3: kelas_id exists but no relation loaded
+  if (item.kelas_id) {
+    return `Kelas ${item.kelas_id}`;
+  }
+  return "-";
+};
 
   return (
     <AdminLayout>
@@ -280,7 +256,11 @@ export default function SiswaList() {
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <button 
-                  onClick={() => fetchList({ page: 1, q: "", kelasId: "", sort })}
+                  onClick={() => {
+                    setKelasId("");
+                    setIsAlumni(""); // ✅ TAMBAHAN: reset filter alumni juga
+                    fetchList({ page: 1, q: "", kelasId: "", isAlumni: "", sort });
+                  }}
                   className="px-4 py-2.5 bg-white text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 shadow-lg hover:shadow-xl border border-gray-200/50 hover:border-gray-300 font-semibold flex items-center justify-center gap-2 text-sm"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -301,10 +281,10 @@ export default function SiswaList() {
             </div>
           </div>
 
-          {/* Filter Section */}
           <div className="bg-white/80 backdrop-blur-sm rounded-xl md:rounded-2xl shadow-xl p-4 md:p-6 mb-6 border border-white/20">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-              <div className="sm:col-span-2 lg:col-span-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+              {/* Filter Kelas */}
+              <div className="sm:col-span-1 lg:col-span-2">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Filter Kelas
                 </label>
@@ -323,9 +303,26 @@ export default function SiswaList() {
                 </select>
               </div>
 
-              <div className="flex items-end sm:col-span-2 lg:col-span-3">
+   
+              <div className="sm:col-span-1 lg:col-span-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Filter Status
+                </label>
+                <select 
+                  value={isAlumni} 
+                  onChange={(e) => setIsAlumni(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm"
+                >
+                  <option value="">Semua (Aktif + Alumni)</option>
+                  <option value="0">Siswa Aktif</option>
+                  <option value="1">Alumni</option>
+                </select>
+              </div>
+
+              {/* Button Apply */}
+              <div className="flex items-end sm:col-span-2 lg:col-span-1">
                 <button 
-                  onClick={() => fetchList({ page: 1, q, kelasId, sort })}
+                  onClick={() => fetchList({ page: 1, q, kelasId, isAlumni, sort })}
                   className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold flex items-center justify-center gap-2"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -362,8 +359,8 @@ export default function SiswaList() {
                     <th className="py-4 px-4 md:px-6 text-left text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wider border-b border-gray-200/50">
                       Kelas
                     </th>
-                    <th className="py-4 px-4 md:px-6 text-left text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wider border-b border-gray-200/50 hidden md:table-cell">
-                      Riwayat Kelas
+                    <th className="py-4 px-4 md:px-6 text-left text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wider border-b border-gray-200/50 hidden lg:table-cell">
+                      Status
                     </th>
                     <th className="py-4 px-4 md:px-6 text-left text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wider border-b border-gray-200/50">
                       Aksi
@@ -399,7 +396,6 @@ export default function SiswaList() {
                   ) : (
                     siswa.map((s, idx) => {
                       const no = (meta?.from ?? ((page - 1) * (meta?.per_page ?? 15) + 1)) + idx;
-                      const riwayatLabel = getLastRiwayatLabel(s);
 
                       return (
                         <tr key={s.id ?? idx} className="hover:bg-gray-50/50 transition-colors duration-200">
@@ -415,15 +411,23 @@ export default function SiswaList() {
                               </div>
                               <div>
                                 <div className="font-semibold text-gray-900 text-sm md:text-base">{s.nama}</div>
-                                {/* keep nisn under name for small screens only */}
                                 {s.nisn && (
                                   <div className="text-xs text-gray-500 mt-0.5 md:hidden">NISN: {s.nisn}</div>
+                                )}
+                                {s.is_alumni && (
+                                  <div className="lg:hidden">
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 mt-1">
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                      </svg>
+                                      Alumni
+                                    </span>
+                                  </div>
                                 )}
                               </div>
                             </div>
                           </td>
 
-                          {/* NISN column - hidden on small screens (we show it under name for small screens) */}
                           <td className="py-4 px-4 md:px-6 hidden md:table-cell">
                             <div className="text-gray-700 text-sm md:text-base">
                               {s.nisn ?? "-"}
@@ -441,16 +445,32 @@ export default function SiswaList() {
                               )}
                             </div>
                           </td>
+                          
                           <td className="py-4 px-4 md:px-6">
                             <div className="text-gray-700 text-sm md:text-base font-medium">
                               {getKelasNama(s)}
                             </div>
                           </td>
-                          <td className="py-4 px-4 md:px-6 hidden md:table-cell">
-                            <div className="text-gray-600 text-sm">
-                              {riwayatLabel}
-                            </div>
+
+                          {/* ✅ KOLOM STATUS ALUMNI (hidden di mobile, ditampilkan di desktop) */}
+                          <td className="py-4 px-4 md:px-6 hidden lg:table-cell">
+                            {s.is_alumni ? (
+                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Alumni
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                                Aktif
+                              </span>
+                            )}
                           </td>
+
                           <td className="py-4 px-4 md:px-6">
                             <div className="flex items-center gap-2">
                               <Link 
