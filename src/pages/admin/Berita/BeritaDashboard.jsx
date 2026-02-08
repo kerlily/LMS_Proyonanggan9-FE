@@ -32,16 +32,16 @@ export default function BeritaDashboardAdmin() {
     }
   };
 
-  // ✅ TAMBAH fungsi filter
-  const getFilteredBeritas = () => {
-    if (filterType === 'berita') {
-      return beritas.filter(b => b.type === 'berita' || !b.type);
-    }
-    if (filterType === 'pengumuman') {
-      return beritas.filter(b => b.type === 'pengumuman');
-    }
-    return beritas; // 'all'
-  };
+const getFilteredBeritas = () => {
+  if (filterType === 'berita') {
+    // Hanya ambil yang EXPLICITLY bertipe 'berita', BUKAN yang null/undefined
+    return beritas.filter(b => b.type === 'berita');
+  }
+  if (filterType === 'pengumuman') {
+    return beritas.filter(b => b.type === 'pengumuman');
+  }
+  return beritas; // 'all'
+};
 
   const filteredBeritas = getFilteredBeritas();
 
@@ -221,7 +221,7 @@ export default function BeritaDashboardAdmin() {
                   <div>
                     <p className="text-sm font-medium text-gray-600">Berita</p>
                     <p className="text-2xl font-bold text-blue-600">
-                      {beritas.filter(b => b.type === 'berita' || !b.type).length}
+                     {beritas.filter(b => b.type === 'berita').length}
                     </p>
                   </div>
                   <div className="p-2 bg-blue-100 rounded-lg">

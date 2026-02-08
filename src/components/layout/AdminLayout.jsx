@@ -135,7 +135,7 @@ export default function AdminLayout({ children }) {
       label: "Konten", 
       icon: Newspaper,
       items: [
-        { icon: Newspaper, label: "Berita", to: "/admin/berita" },
+        { icon: Newspaper, label: "Konten", to: "/admin/berita" },
         { icon: BookImage, label: "Galeri", to: "/admin/gallery" },
       ]
     },

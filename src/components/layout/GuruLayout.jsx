@@ -115,7 +115,7 @@ export default function GuruLayout({ children }) {
       label: "Konten", 
       icon: Newspaper,
       items: [
-        { icon: Newspaper, label: "Berita", to: "/guru/berita" },
+        { icon: Newspaper, label: "Konten", to: "/guru/berita" },
         { icon: BookImage, label: "Galeri", to: "/guru/gallery" },
       ]
     },
