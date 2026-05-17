@@ -1,6 +1,6 @@
 // src/pages/admin/Berita/BeritaDashboard.jsx
 import React, { useEffect, useState } from 'react';
-import { Plus, RefreshCw, Edit2, Trash2, X, Eye, EyeOff, Calendar, Newspaper, Megaphone } from 'lucide-react';
+import { Plus, RefreshCw, Edit2, Trash2, X, Eye, EyeOff, Calendar, Newspaper, Megaphone, Download, Paperclip } from 'lucide-react'; 
 import Swal from 'sweetalert2';
 import BeritaService from '../../../_services/berita';
 import BeritaForm from '../../../components/BeritaForm';
@@ -12,7 +12,7 @@ export default function BeritaDashboardAdmin() {
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [filterType, setFilterType] = useState('all'); // ✅ TAMBAH state filter
+  const [filterType, setFilterType] = useState('all'); 
 
   useEffect(() => { 
     fetchBeritas(); 
@@ -119,6 +119,13 @@ const getFilteredBeritas = () => {
       return '-';
     }
   };
+
+  const getAttachmentLabel = (name) => {
+  if (!name) return 'Unduh Lampiran';
+  const ext = name.split('.').pop().toLowerCase();
+  const labels = { pdf: 'PDF', zip: 'ZIP', rar: 'RAR', doc: 'Word', docx: 'Word' };
+  return `Unduh ${labels[ext] ?? ext.toUpperCase()}`;
+};
 
   return (
     <AdminLayout>
@@ -325,21 +332,40 @@ const getFilteredBeritas = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-200">
-                      <button
-                        onClick={() => openEdit(berita)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
-                        title="Edit"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(berita.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
-                        title="Hapus"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                  <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                      {/* Tombol download attachment -- hanya tampil jika ada file */}
+                      {berita.has_attachment && berita.attachment_url ? (
+                        <a
+                          href={berita.attachment_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          download={berita.attachment_name ?? true}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg transition-colors duration-200"
+                          title={berita.attachment_name ?? 'Unduh Lampiran'}
+                        >
+                          <Paperclip className="w-3.5 h-3.5" />
+                          {getAttachmentLabel(berita.attachment_name)}
+                        </a>
+                      ) : (
+                        <span /> // placeholder agar tombol edit/hapus tetap di kanan
+                      )}
+                  
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => openEdit(berita)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                          title="Edit"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(berita.id)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                          title="Hapus"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
