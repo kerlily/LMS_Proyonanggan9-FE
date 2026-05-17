@@ -415,6 +415,7 @@ const getFilteredBeritas = () => {
                 <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
                   <div className="p-6">
                     <BeritaForm 
+                      key={editing ? `edit-${editing.id}` : 'create'}
                       initialData={editing} 
                       onSaved={handleSaved} 
                       onCancel={() => setShowForm(false)} 
